@@ -1,0 +1,72 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    if: vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Assume the deployment role
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push the API image
+        working-directory: backend
+        env:
+          IMAGE: ${{ vars.ECR_REPOSITORY_URL }}
+        run: |
+          docker build -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:latest" .
+          docker push "$IMAGE:${{ github.sha }}"
+          docker push "$IMAGE:latest"
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build the frontend
+        working-directory: frontend
+        env:
+          VITE_API_URL: /api
+        run: |
+          npm ci
+          npx vite build
+
+      - name: Publish the frontend to S3
+        working-directory: frontend
+        run: |
+          aws s3 sync dist "s3://${{ vars.SITE_BUCKET }}" --delete \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude index.html
+          aws s3 cp dist/index.html "s3://${{ vars.SITE_BUCKET }}/index.html" \
+            --cache-control "no-cache"
+
+      - name: Invalidate the CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --paths "/index.html"
+
+      - name: Roll out the new image
+        run: |
+          aws autoscaling start-instance-refresh \
+            --auto-scaling-group-name "${{ vars.AUTOSCALING_GROUP }}" \
+            --preferences MinHealthyPercentage=50
