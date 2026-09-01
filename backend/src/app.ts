@@ -11,6 +11,7 @@ import { dashboardRoutes } from './modules/dashboard/dashboard.routes';
 import { healthRoutes } from './modules/health/health.routes';
 import { productRoutes } from './modules/products/products.routes';
 import { stockRoutes } from './modules/stock/stock.routes';
+import { userRoutes } from './modules/users/users.routes';
 
 export function createApp() {
   const app = express();
@@ -24,6 +25,7 @@ export function createApp() {
 
   app.use('/api/health', healthRoutes);
   app.use('/api/auth', authRoutes);
+  app.use('/api/users', userRoutes);
   app.use('/api/customers', customerRoutes);
   app.use('/api/products', productRoutes);
   app.use('/api/stock-movements', stockRoutes);

@@ -35,6 +35,53 @@ jobs:
         working-directory: backend
         run: npx tsc
 
+  tests:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: erp_admin
+          POSTGRES_PASSWORD: erp_admin
+          POSTGRES_DB: erp_portal_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U erp_admin -d erp_portal_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql://erp_admin:erp_admin@localhost:5432/erp_portal_test
+      JWT_SECRET: ci_jwt_secret_for_the_operations_portal
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Generate Prisma client
+        working-directory: backend
+        run: npx prisma generate
+
+      - name: Typecheck tests
+        working-directory: backend
+        run: npx tsc --noEmit --project tsconfig.test.json
+
+      - name: Run tests
+        working-directory: backend
+        run: npm test
+
   frontend:
     runs-on: ubuntu-latest
 

@@ -11,6 +11,7 @@
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:4000/api" },
     { "key": "token", "value": "" },
+    { "key": "staffUserId", "value": "" },
     { "key": "customerId", "value": "" },
     { "key": "productId", "value": "" },
     { "key": "challanId", "value": "" }
@@ -98,6 +99,120 @@
           "request": {
             "method": "GET",
             "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "List users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const staff = body.data.find((row) => row.role !== 'ADMIN');",
+                  "if (staff) {",
+                  "  pm.collectionVariables.set('staffUserId', staff.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users?page=1&limit=20&search=&role=&isActive=",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "search", "value": "" },
+                { "key": "role", "value": "" },
+                { "key": "isActive", "value": "" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create user",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Prakash Shinde\",\n  \"email\": \"prakash@example.com\",\n  \"role\": \"SALES\",\n  \"password\": \"Portal@2026\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/users", "host": ["{{baseUrl}}"], "path": ["users"] }
+          }
+        },
+        {
+          "name": "Update user role",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"role\": \"ACCOUNTS\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{staffUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{staffUserId}}"]
+            }
+          }
+        },
+        {
+          "name": "Deactivate user",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"isActive\": false\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{staffUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{staffUserId}}"]
+            }
+          }
+        },
+        {
+          "name": "Reactivate user",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"isActive\": true\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{staffUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{staffUserId}}"]
+            }
+          }
+        },
+        {
+          "name": "Reset password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"password\": \"NewPortal@2027\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{staffUserId}}/password",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{staffUserId}}", "password"]
+            }
+          }
+        },
+        {
+          "name": "Create user with a weak password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Weak Password\",\n  \"email\": \"weak@example.com\",\n  \"role\": \"SALES\",\n  \"password\": \"abc\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/users", "host": ["{{baseUrl}}"], "path": ["users"] }
           }
         }
       ]

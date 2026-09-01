@@ -3,6 +3,7 @@ import { Role } from '../types';
 const ALL_ROLES: Role[] = ['ADMIN', 'SALES', 'WAREHOUSE', 'ACCOUNTS'];
 
 const PERMISSIONS = {
+  manageUsers: ['ADMIN'],
   manageCustomers: ['ADMIN', 'SALES'],
   manageProducts: ['ADMIN', 'WAREHOUSE'],
   createChallan: ['ADMIN', 'SALES'],

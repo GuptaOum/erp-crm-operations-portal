@@ -1,21 +1,34 @@
 import { NextFunction, Request, Response } from 'express';
+import { prisma } from '../lib/prisma';
 import { AppError } from '../utils/AppError';
-import { verifyToken } from '../utils/token';
+import { TokenPayload, verifyToken } from '../utils/token';
 
-export function authenticate(req: Request, _res: Response, next: NextFunction) {
+export async function authenticate(req: Request, _res: Response, next: NextFunction) {
   const header = req.headers.authorization;
 
   if (!header || !header.startsWith('Bearer ')) {
     return next(new AppError(401, 'Authentication required'));
   }
 
+  let payload: TokenPayload;
+
   try {
-    const payload = verifyToken(header.slice(7));
-    req.user = { id: payload.sub, email: payload.email, role: payload.role };
-    next();
+    payload = verifyToken(header.slice(7));
   } catch {
-    next(new AppError(401, 'Invalid or expired token'));
+    return next(new AppError(401, 'Invalid or expired token'));
   }
+
+  const user = await prisma.user.findUnique({
+    where: { id: payload.sub },
+    select: { id: true, email: true, role: true, isActive: true },
+  });
+
+  if (!user || !user.isActive) {
+    return next(new AppError(401, 'This account is no longer active'));
+  }
+
+  req.user = { id: user.id, email: user.email, role: user.role };
+  next();
 }
 
 export function currentUser(req: Request) {
