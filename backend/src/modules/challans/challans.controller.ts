@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { buildChallanPdf } from '../../lib/pdf';
 import { currentUser } from '../../middleware/authenticate';
 import { parseId } from '../../utils/identifier';
 import { createChallanSchema, listChallansSchema } from './challans.schema';
@@ -31,3 +32,11 @@ export async function cancel(req: Request, res: Response) {
   res.json(challan);
 }
 
+export async function pdf(req: Request, res: Response) {
+  const challan = await challanService.getChallanRecord(parseId(req.params.id));
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${challan.challanNumber}.pdf"`);
+
+  buildChallanPdf(challan).pipe(res);
+}

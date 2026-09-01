@@ -9,6 +9,7 @@ challanRoutes.use(authenticate);
 
 challanRoutes.get('/', controller.list);
 challanRoutes.get('/:id', controller.detail);
+challanRoutes.get('/:id/pdf', authorize('ADMIN', 'SALES', 'ACCOUNTS'), controller.pdf);
 
 challanRoutes.post('/', authorize('ADMIN', 'SALES'), controller.create);
 challanRoutes.post('/:id/confirm', authorize('ADMIN', 'SALES', 'WAREHOUSE'), controller.confirm);
