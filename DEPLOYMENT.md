@@ -40,13 +40,14 @@ anything.
 
 | Stage | What it adds | Approximate cost |
 | --- | --- | --- |
-| 1 | VPC, two public and two private subnets, internet gateway, one EC2 instance with an Elastic IP, S3, ECR, SSM parameters, budget alarm | 0.58 USD per day |
-| 2 | RDS PostgreSQL Multi-AZ in the private subnets | 1.48 USD per day |
-| 3 | NAT gateway, application load balancer, Auto Scaling group in the private subnets, S3 and CloudFront for the frontend | 3.70 USD per day |
+| 1 | VPC, two public and two private subnets, internet gateway, one EC2 instance with an Elastic IP, S3, ECR, SSM parameters, budget alarm | 0.72 USD per day |
+| 2 | RDS PostgreSQL Multi-AZ in the private subnets | 2.06 USD per day |
+| 3 | NAT gateway, application load balancer, Auto Scaling group in the private subnets, S3 and CloudFront for the frontend | 4.51 USD per day |
 
-Costs are for the Mumbai region and assume the resources run continuously. The expensive items are
-the NAT gateway at 32 USD a month, the load balancer at roughly 18 USD a month, and Multi-AZ RDS at
-roughly 25 USD a month. **Run `terraform destroy` when you are finished.** See
+Costs are `ap-south-1` on demand rates taken from the AWS Pricing API, and assume the resources run
+continuously. The expensive items are the NAT gateway at 0.056 USD an hour, Multi-AZ RDS at 0.052,
+and the load balancer at 0.0239. Note that every public IPv4 address bills at 0.005 an hour whether
+it is attached or idle. **Run `terraform destroy` when you are finished.** See
 [Teardown](#teardown).
 
 ## Prerequisites
