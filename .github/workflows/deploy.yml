@@ -67,6 +67,15 @@ jobs:
 
       - name: Roll out the new image
         run: |
+          desired=$(aws autoscaling describe-auto-scaling-groups \
+            --auto-scaling-group-names "${{ vars.AUTOSCALING_GROUP }}" \
+            --query 'AutoScalingGroups[0].DesiredCapacity' --output text)
+
+          if [ "$desired" = "0" ] || [ "$desired" = "None" ]; then
+            echo "Auto Scaling group is empty, skipping the instance refresh"
+            exit 0
+          fi
+
           aws autoscaling start-instance-refresh \
             --auto-scaling-group-name "${{ vars.AUTOSCALING_GROUP }}" \
             --preferences MinHealthyPercentage=50

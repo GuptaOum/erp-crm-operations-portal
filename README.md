@@ -8,18 +8,22 @@ out of the warehouse.
 
 | | |
 | --- | --- |
-| Portal | https://13-207-31-87.nip.io |
-| API | https://13-207-31-87.nip.io/api |
-| Stage | 2, application on EC2 with PostgreSQL on RDS Multi-AZ |
-| Region | ap-south-1, primary and standby across two availability zones |
+| Portal | https://d3q25lsoez0ee9.cloudfront.net |
+| API | https://d3q25lsoez0ee9.cloudfront.net/api |
+| Stage | 3, CloudFront and S3 in front, Auto Scaling group behind an ALB, RDS Multi-AZ |
+| Region | ap-south-1 across two availability zones |
 
 Sign in with any account from [Test accounts](#test-accounts); all use the password `Portal@2026`.
 
 The environment is destroyed between demonstrations to avoid running cost, so if the link is not
-answering it can be rebuilt in about fifteen minutes with `terraform apply -var stage=2` followed by
-the steps in [DEPLOYMENT.md](DEPLOYMENT.md). Failover has been verified by forcing one with
-`reboot-db-instance --force-failover`: the database moved from `ap-south-1b` to `ap-south-1a` and the
-API recovered on its own after roughly twenty five seconds without a restart.
+answering it can be rebuilt with `./scripts/up.sh 3`. Both resilience claims have been exercised
+rather than assumed:
+
+- **Database failover.** `reboot-db-instance --force-failover` moved the primary from `ap-south-1b`
+  to `ap-south-1a`. The API recovered on its own after roughly twenty five seconds with no restart.
+- **Instance loss.** Hard terminating an instance in the Auto Scaling group produced a single failed
+  request, after which the group launched a replacement and both targets were healthy again within
+  about two and a half minutes.
 
 ## Contents
 
@@ -346,3 +350,9 @@ including TLS, stage transitions and the teardown checklist, is in [DEPLOYMENT.m
   traffic and the database would still fail over correctly.
 - Product images are soft deleted only in the sense that replacing an image leaves the previous
   object in the bucket. Bucket versioning is on, so nothing is lost, but nothing is reaped either.
+- Hard terminating an instance costs a small number of requests. The target group health check runs
+  every thirty seconds, so the load balancer keeps sending traffic to a dead target until the next
+  check fails. A lifecycle hook that deregisters the target before shutdown would close that window.
+- CloudFront serves the site and the API from one distribution. SPA routing is handled by a
+  CloudFront Function rather than custom error responses, because custom error responses apply to
+  the whole distribution and would rewrite genuine API 403 and 404 replies into the index page.

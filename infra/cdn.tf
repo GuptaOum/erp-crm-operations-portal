@@ -35,6 +35,31 @@ resource "aws_cloudfront_origin_access_control" "site" {
   signing_protocol                  = "sigv4"
 }
 
+resource "aws_cloudfront_function" "spa_router" {
+  count   = local.load_balanced ? 1 : 0
+  name    = "${local.name}-spa-router"
+  runtime = "cloudfront-js-2.0"
+  publish = true
+
+  code = <<-JS
+    function handler(event) {
+      var request = event.request;
+      var uri = request.uri;
+
+      if (uri.startsWith('/api/')) {
+        return request;
+      }
+
+      if (uri.includes('.')) {
+        return request;
+      }
+
+      request.uri = '/index.html';
+      return request;
+    }
+  JS
+}
+
 resource "aws_cloudfront_distribution" "main" {
   count = local.load_balanced ? 1 : 0
 
@@ -68,6 +93,11 @@ resource "aws_cloudfront_distribution" "main" {
     cached_methods         = ["GET", "HEAD"]
     cache_policy_id        = data.aws_cloudfront_cache_policy.optimized.id
     compress               = true
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.spa_router[0].arn
+    }
   }
 
   ordered_cache_behavior {
@@ -79,20 +109,6 @@ resource "aws_cloudfront_distribution" "main" {
     cache_policy_id          = data.aws_cloudfront_cache_policy.disabled.id
     origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.id
     compress                 = true
-  }
-
-  custom_error_response {
-    error_code            = 403
-    response_code         = 200
-    response_page_path    = "/index.html"
-    error_caching_min_ttl = 0
-  }
-
-  custom_error_response {
-    error_code            = 404
-    response_code         = 200
-    response_page_path    = "/index.html"
-    error_caching_min_ttl = 0
   }
 
   restrictions {

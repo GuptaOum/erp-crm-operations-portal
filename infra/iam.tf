@@ -67,12 +67,20 @@ resource "aws_iam_instance_profile" "instance" {
   role = aws_iam_role.instance.name
 }
 
+data "tls_certificate" "github_oidc" {
+  count = var.github_repository != "" && var.create_github_oidc_provider ? 1 : 0
+  url   = "https://token.actions.githubusercontent.com"
+}
+
 resource "aws_iam_openid_connect_provider" "github" {
   count = var.github_repository != "" && var.create_github_oidc_provider ? 1 : 0
 
-  url             = "https://token.actions.githubusercontent.com"
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
+  url            = "https://token.actions.githubusercontent.com"
+  client_id_list = ["sts.amazonaws.com"]
+
+  thumbprint_list = [
+    data.tls_certificate.github_oidc[0].certificates[length(data.tls_certificate.github_oidc[0].certificates) - 1].sha1_fingerprint,
+  ]
 }
 
 locals {
@@ -103,7 +111,9 @@ data "aws_iam_policy_document" "github_assume" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repository}:*"]
+      values = length(var.github_subjects) > 0 ? var.github_subjects : [
+        "repo:${var.github_repository}:*",
+      ]
     }
   }
 }

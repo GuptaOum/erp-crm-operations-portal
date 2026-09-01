@@ -97,3 +97,9 @@ variable "create_github_oidc_provider" {
   type        = bool
   default     = true
 }
+
+variable "github_subjects" {
+  description = "OIDC subject patterns allowed to assume the deploy role, GitHub emits immutable owner and repository ids"
+  type        = list(string)
+  default     = []
+}
