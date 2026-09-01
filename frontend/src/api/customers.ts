@@ -1,4 +1,4 @@
-import { Customer, CustomerDetail, CustomerNote, Paginated } from '../types';
+import { Customer, CustomerDetail, CustomerNote, FollowUpQueue, Paginated } from '../types';
 import { api } from './client';
 
 export interface CustomerFilters {
@@ -27,6 +27,11 @@ export interface CustomerPayload {
 
 export async function fetchCustomers(filters: CustomerFilters) {
   const response = await api.get<Paginated<Customer>>('/customers', { params: filters });
+  return response.data;
+}
+
+export async function fetchFollowUps(params: { bucket?: string; page?: number; limit?: number }) {
+  const response = await api.get<FollowUpQueue>('/customers/follow-ups', { params });
   return response.data;
 }
 

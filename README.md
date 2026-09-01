@@ -34,6 +34,7 @@ rather than assumed:
 - [Running locally](#running-locally)
 - [Environment variables](#environment-variables)
 - [Test accounts](#test-accounts)
+- [Testing](#testing)
 - [API reference](#api-reference)
 - [Roles and permissions](#roles-and-permissions)
 - [Deployment](#deployment)
@@ -122,28 +123,62 @@ security group accepts port 5432 from the application security group only.
 
 ```mermaid
 flowchart TB
-  users((Internet)) --> cf[CloudFront]
-  cf -->|"default /*"| s3[(S3 static site)]
-  cf -->|"/api/*"| alb[Application load balancer]
-  subgraph vpc["VPC 10.0.0.0/16"]
-    subgraph aza["Availability zone A"]
-      nat[NAT gateway]
-      app1["App instance"]
-      rds1["RDS primary"]
-    end
-    subgraph azb["Availability zone B"]
-      app2["App instance"]
-      rds2["RDS standby"]
+  users((Internet))
+  gha["GitHub Actions<br/>OIDC, no stored keys"]
+
+  subgraph aws["AWS Cloud, ap-south-1"]
+    cf["CloudFront distribution"]
+    site[("S3 static site")]
+    ecr[("ECR, API image")]
+
+    users --> cf
+    cf -->|"default /*"| site
+    gha -. "sync build" .-> site
+    gha -. "push image" .-> ecr
+
+    subgraph vpc["VPC 10.0.0.0/16"]
+      alb["Application load balancer"]
+      cf -->|"/api/*"| alb
+
+      subgraph aza["Availability zone A"]
+        subgraph puba["Public subnet 10.0.0.0/24"]
+          nat["NAT gateway"]
+        end
+        subgraph priva["Private subnet 10.0.1.0/24"]
+          app1["App instance, ASG<br/>t3.small"]
+          rds1[("RDS primary<br/>PostgreSQL 17")]
+        end
+      end
+
+      subgraph azb["Availability zone B"]
+        subgraph pubb["Public subnet 10.0.2.0/24"]
+          albnode["ALB node"]
+        end
+        subgraph privb["Private subnet 10.0.3.0/24"]
+          app2["App instance, ASG<br/>t3.small"]
+          rds2[("RDS standby")]
+        end
+      end
+
+      alb --> app1
+      alb --> app2
+      app1 --> rds1
+      app2 --> rds1
+      rds1 -. "synchronous replication" .-> rds2
+      app1 --> nat
+      app2 --> nat
+      app1 -. "pull image" .-> ecr
     end
   end
-  alb --> app1
-  alb --> app2
-  app1 --> rds1
-  app2 --> rds1
-  rds1 -. "synchronous replication" .-> rds2
-  app1 --> nat
-  app2 --> nat
 ```
+
+The final state runs the stateless API on an Auto Scaling group of `t3.small` instances spread across
+both private subnets, fronted by an internet facing load balancer in the public subnets and a single
+CloudFront distribution that serves the React build from S3 and proxies `/api` to the balancer. The
+database is RDS PostgreSQL 17 Multi-AZ, with a synchronous standby in the second zone. A single NAT
+gateway in zone A gives both private subnets outbound access. Deployments arrive through GitHub
+Actions over OIDC, which pushes the API image to ECR and the frontend build to S3 without any stored
+AWS credentials.
 
 The application instances move into the private subnets behind an Auto Scaling group. They accept
 traffic on port 4000 from the load balancer security group and from nowhere else. There is no SSH
@@ -153,11 +188,22 @@ with two behaviours, so the site and the API share one origin and one free TLS c
 ## Modules
 
 **Authentication and roles.** JWT login for four roles: admin, sales, warehouse and accounts.
-Passwords are bcrypt hashed. Login is rate limited.
+Passwords are bcrypt hashed. Login is rate limited. There is no public sign up: this is an internal
+portal, and letting a stranger choose their own role would defeat the permission model. Accounts are
+issued by an admin instead.
+
+**User management.** An admin only page to add staff, change a name or role, deactivate and
+reactivate an account, and reset a password. An admin cannot deactivate or demote themselves, so the
+portal cannot be locked out of its own administration. Every request revalidates the account behind
+the token, so deactivating someone ends their session immediately rather than when their token
+expires, and a role change applies on their very next request.
 
 **Customer CRM.** Name, mobile, email, business name, optional GST number, customer type, full
-address, status, follow up date and notes. Search across name, business, mobile, email and GST,
-filter by status and type, and a dated follow up note trail on the detail page.
+address, status, follow up date and notes. Mobile is unique, so the same number cannot be entered
+against two accounts. Search across name, business, mobile, email and GST, filter by status and
+type, and a dated follow up note trail on the detail page. A dedicated follow up queue lists every
+account with a follow up date, bucketed into overdue, today and upcoming so nothing owed to a
+customer is lost.
 
 **Products and inventory.** Name, SKU, category, unit price, current stock, minimum stock alert
 level and warehouse location. Stock is never edited directly on the product form. Every change goes
@@ -254,6 +300,39 @@ Every account uses the password `Portal@2026`.
 | `warehouse@example.com` | Warehouse |
 | `accounts@example.com` | Accounts |
 
+## Testing
+
+Vitest drives the Express app through Supertest against a real PostgreSQL database. There are no
+mocks for Prisma, because the behaviour worth proving here is transactional: stock deduction,
+rollback on oversell, and the role matrix. A mocked client would prove none of it.
+
+```bash
+cd backend
+cp .env.test.example .env.test    # point DATABASE_URL at a throwaway database
+npm test
+```
+
+The runner applies the migrations once before the suite, then truncates every table between tests,
+so each test starts from an empty schema. Test files run one at a time against the single database.
+`npm run test:coverage` writes a text and lcov report.
+
+The database is disposable and every table is truncated, so never point `DATABASE_URL` at an
+environment that holds data you want to keep.
+
+| File | Covers |
+| --- | --- |
+| `tests/auth.test.ts` | Login, deactivated accounts, token rejection, profile |
+| `tests/users.test.ts` | Staff creation, deactivation locking a live session out, password reset |
+| `tests/rbac.test.ts` | Every route against all four roles, plus the GST masking on challans |
+| `tests/challans.test.ts` | Stock deduction, oversell rollback, cancellation, numbering, PDF |
+| `tests/products.test.ts` | Stock adjustments, movement history, filters, image guard |
+| `tests/customers.test.ts` | Validation, unique mobile, partial updates, notes, follow up queue, search |
+| `tests/dashboard.test.ts` | The per role payload, asserting absence as well as presence |
+| `tests/health.test.ts` | Liveness, readiness, unknown route shape |
+
+CI runs the same suite on every push and pull request against a `postgres:16` service container, so
+it needs no local PostgreSQL.
+
 ## API reference
 
 Base path `/api`. All routes except login and the health checks require
@@ -266,7 +345,12 @@ Base path `/api`. All routes except login and the health checks require
 | GET | `/health/ready` | Readiness, checks the database |
 | POST | `/auth/login` | Exchange credentials for a token |
 | GET | `/auth/me` | Current user |
+| GET | `/users` | Admin only. List, filter by `search`, `role`, `isActive` |
+| POST | `/users` | Admin only. Create a staff account |
+| PATCH | `/users/:id` | Admin only. Name, role, activate or deactivate |
+| POST | `/users/:id/password` | Admin only. Set a new password |
 | GET | `/customers` | List, filter by `search`, `status`, `type` |
+| GET | `/customers/follow-ups` | Due follow up queue, filter by `bucket` |
 | POST | `/customers` | Create |
 | GET | `/customers/:id` | Detail with follow ups and recent challans |
 | PATCH | `/customers/:id` | Update |
@@ -317,6 +401,7 @@ details, so those endpoints are closed to it rather than merely hidden.
 
 | Endpoint | Admin | Sales | Warehouse | Accounts |
 | --- | :---: | :---: | :---: | :---: |
+| `/users` | yes | | | |
 | `/customers` and notes | yes | yes | | yes |
 | `/products` | yes | yes | yes | yes |
 | `/stock-movements` | yes | | yes | |
@@ -333,8 +418,10 @@ omits the GST number, which is billing information rather than dispatch informat
 
 | Action | Admin | Sales | Warehouse | Accounts |
 | --- | :---: | :---: | :---: | :---: |
+| Manage staff accounts | yes | | | |
 | Create and edit customers | yes | yes | | |
 | Add follow up notes | yes | yes | | |
+| View the follow up queue | yes | yes | | |
 | Create and edit products | yes | | yes | |
 | Record stock movements | yes | | yes | |
 | Create and cancel challans | yes | yes | | |
@@ -365,9 +452,13 @@ including TLS, stage transitions and the teardown checklist, is in [DEPLOYMENT.m
 
 ## Known limitations
 
-- No automated test suite. The Postman collection covers the API paths, including the failure cases,
-  but there are no unit or integration tests.
-- Tokens do not refresh. A token lasts eight hours and the user signs in again after that.
+- The tests cover the API end to end but there are no frontend component tests and no browser level
+  tests. The React layer is verified by hand and by the typechecker only.
+- Tokens do not refresh. A token lasts eight hours and the user signs in again after that. Resetting
+  a password blocks the old one immediately but does not close sessions that are already open, since
+  there is no token revocation list.
+- New staff are given a password by the admin and told it directly. There is no invitation email and
+  no self-service password reset, because the portal sends no mail.
 - The challan form loads up to one hundred customers and products into select lists rather than
   paging or searching within them. Fine at this data volume, not at ten thousand products.
 - Stage 3 runs one NAT gateway rather than one per availability zone. This is a deliberate cost

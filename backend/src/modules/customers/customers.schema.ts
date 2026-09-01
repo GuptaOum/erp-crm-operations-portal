@@ -36,6 +36,14 @@ export const listCustomersSchema = z.object({
   type: z.preprocess(emptyToUndefined, z.enum(CUSTOMER_TYPES).optional()),
 });
 
+export const FOLLOW_UP_BUCKETS = ['overdue', 'today', 'upcoming', 'all'] as const;
+
+export const listFollowUpsSchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  bucket: z.preprocess(emptyToUndefined, z.enum(FOLLOW_UP_BUCKETS).default('all')),
+});
+
 export const createNoteSchema = z.object({
   note: z.string().trim().min(1, 'Note cannot be empty').max(2000),
   followUpDate: z.coerce.date().optional(),
@@ -44,4 +52,5 @@ export const createNoteSchema = z.object({
 export type CreateCustomerInput = z.infer<typeof createCustomerSchema>;
 export type UpdateCustomerInput = z.infer<typeof updateCustomerSchema>;
 export type ListCustomersInput = z.infer<typeof listCustomersSchema>;
+export type ListFollowUpsInput = z.infer<typeof listFollowUpsSchema>;
 export type CreateNoteInput = z.infer<typeof createNoteSchema>;

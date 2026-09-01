@@ -8,6 +8,7 @@ export const customerRoutes = Router();
 customerRoutes.use(authenticate);
 
 customerRoutes.get('/', authorize('ADMIN', 'SALES', 'ACCOUNTS'), controller.list);
+customerRoutes.get('/follow-ups', authorize('ADMIN', 'SALES'), controller.followUps);
 customerRoutes.get('/:id', authorize('ADMIN', 'SALES', 'ACCOUNTS'), controller.detail);
 customerRoutes.get('/:id/notes', authorize('ADMIN', 'SALES', 'ACCOUNTS'), controller.notes);
 

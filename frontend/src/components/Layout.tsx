@@ -14,6 +14,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'Dashboard', end: true },
   { to: '/customers', label: 'Customers', end: false, permission: 'viewCustomers' },
+  { to: '/customers/follow-ups', label: 'Follow ups', end: true, permission: 'viewFollowUps' },
   { to: '/products', label: 'Products', end: false, permission: 'viewInventory' },
   {
     to: '/stock-movements',
@@ -22,6 +23,7 @@ const NAV_ITEMS: NavItem[] = [
     permission: 'viewStockMovements',
   },
   { to: '/challans', label: 'Sales challans', end: false, permission: 'viewChallans' },
+  { to: '/users', label: 'Users', end: false, permission: 'manageUsers' },
 ];
 
 export function Layout() {

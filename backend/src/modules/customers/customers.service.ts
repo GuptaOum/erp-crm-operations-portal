@@ -6,6 +6,7 @@ import {
   CreateCustomerInput,
   CreateNoteInput,
   ListCustomersInput,
+  ListFollowUpsInput,
   UpdateCustomerInput,
 } from './customers.schema';
 
@@ -13,6 +14,14 @@ const createdBySelect = { select: { id: true, name: true } };
 
 function toNullable(value: string | undefined) {
   return value && value.length > 0 ? value : null;
+}
+
+async function assertMobileAvailable(mobile: string, ignoreId?: string) {
+  const existing = await prisma.customer.findUnique({ where: { mobile } });
+
+  if (existing && existing.id !== ignoreId) {
+    throw new AppError(409, `A customer with mobile ${mobile} already exists`);
+  }
 }
 
 export async function listCustomers(query: ListCustomersInput) {
@@ -51,6 +60,57 @@ export async function listCustomers(query: ListCustomersInput) {
   return { data, meta: buildMeta(total, page, limit) };
 }
 
+function dayBounds() {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return { start, end };
+}
+
+const followUpSelect = {
+  id: true,
+  name: true,
+  businessName: true,
+  mobile: true,
+  status: true,
+  followUpDate: true,
+} satisfies Prisma.CustomerSelect;
+
+export async function listFollowUps(query: ListFollowUpsInput) {
+  const { page, limit, skip } = getPageParams(query.page, query.limit);
+  const { start, end } = dayBounds();
+
+  const base: Prisma.CustomerWhereInput = {
+    status: { not: 'INACTIVE' },
+    followUpDate: { not: null },
+  };
+
+  const bucketWhere: Record<Exclude<typeof query.bucket, 'all'>, Prisma.CustomerWhereInput> = {
+    overdue: { ...base, followUpDate: { lt: start } },
+    today: { ...base, followUpDate: { gte: start, lt: end } },
+    upcoming: { ...base, followUpDate: { gte: end } },
+  };
+
+  const where = query.bucket === 'all' ? base : bucketWhere[query.bucket];
+
+  const [data, total, overdue, today, upcoming] = await Promise.all([
+    prisma.customer.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { followUpDate: 'asc' },
+      select: followUpSelect,
+    }),
+    prisma.customer.count({ where }),
+    prisma.customer.count({ where: bucketWhere.overdue }),
+    prisma.customer.count({ where: bucketWhere.today }),
+    prisma.customer.count({ where: bucketWhere.upcoming }),
+  ]);
+
+  return { data, meta: buildMeta(total, page, limit), counts: { overdue, today, upcoming } };
+}
+
 export async function getCustomer(id: string) {
   const customer = await prisma.customer.findUnique({
     where: { id },
@@ -82,6 +142,8 @@ export async function getCustomer(id: string) {
 }
 
 export async function createCustomer(input: CreateCustomerInput, userId: string) {
+  await assertMobileAvailable(input.mobile);
+
   return prisma.customer.create({
     data: {
       name: input.name,
@@ -108,6 +170,10 @@ export async function updateCustomer(id: string, input: UpdateCustomerInput) {
 
   if (!existing) {
     throw new AppError(404, 'Customer not found');
+  }
+
+  if (input.mobile && input.mobile !== existing.mobile) {
+    await assertMobileAvailable(input.mobile, id);
   }
 
   const data: Prisma.CustomerUpdateInput = {

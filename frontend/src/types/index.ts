@@ -16,6 +16,16 @@ export interface UserRef {
   name: string;
 }
 
+export interface PortalUser {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface PageMeta {
   total: number;
   page: number;
@@ -66,6 +76,21 @@ export interface CustomerChallanSummary {
 export interface CustomerDetail extends Customer {
   followUps: CustomerNote[];
   challans: CustomerChallanSummary[];
+}
+
+export interface FollowUpCustomer {
+  id: string;
+  name: string;
+  businessName: string;
+  mobile: string;
+  status: CustomerStatus;
+  followUpDate: string;
+}
+
+export interface FollowUpQueue {
+  data: FollowUpCustomer[];
+  meta: PageMeta;
+  counts: { overdue: number; today: number; upcoming: number };
 }
 
 export interface Product {

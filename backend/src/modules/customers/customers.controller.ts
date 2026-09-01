@@ -5,6 +5,7 @@ import {
   createCustomerSchema,
   createNoteSchema,
   listCustomersSchema,
+  listFollowUpsSchema,
   updateCustomerSchema,
 } from './customers.schema';
 import * as customerService from './customers.service';
@@ -12,6 +13,12 @@ import * as customerService from './customers.service';
 export async function list(req: Request, res: Response) {
   const query = listCustomersSchema.parse(req.query);
   const result = await customerService.listCustomers(query);
+  res.json(result);
+}
+
+export async function followUps(req: Request, res: Response) {
+  const query = listFollowUpsSchema.parse(req.query);
+  const result = await customerService.listFollowUps(query);
   res.json(result);
 }
 

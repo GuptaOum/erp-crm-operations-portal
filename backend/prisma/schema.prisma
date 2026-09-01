@@ -58,7 +58,7 @@ model User {
 model Customer {
   id           String         @id @default(uuid())
   name         String
-  mobile       String
+  mobile       String         @unique
   email        String?
   businessName String
   gstNumber    String?
@@ -80,7 +80,6 @@ model Customer {
 
   @@index([status])
   @@index([type])
-  @@index([mobile])
   @@map("customers")
 }
 

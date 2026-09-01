@@ -9,9 +9,11 @@ import { ChallanList } from './pages/challans/ChallanList';
 import { CustomerDetailPage } from './pages/customers/CustomerDetail';
 import { CustomerForm } from './pages/customers/CustomerForm';
 import { CustomerList } from './pages/customers/CustomerList';
+import { FollowUps } from './pages/customers/FollowUps';
 import { ProductForm } from './pages/products/ProductForm';
 import { ProductList } from './pages/products/ProductList';
 import { StockMovements } from './pages/products/StockMovements';
+import { UserList } from './pages/users/UserList';
 
 export function App() {
   return (
@@ -23,6 +25,7 @@ export function App() {
           <Route path="/" element={<Dashboard />} />
 
           <Route path="/customers" element={<CustomerList />} />
+          <Route path="/customers/follow-ups" element={<FollowUps />} />
           <Route path="/customers/new" element={<CustomerForm />} />
           <Route path="/customers/:id" element={<CustomerDetailPage />} />
           <Route path="/customers/:id/edit" element={<CustomerForm />} />
@@ -35,6 +38,8 @@ export function App() {
           <Route path="/challans" element={<ChallanList />} />
           <Route path="/challans/new" element={<ChallanForm />} />
           <Route path="/challans/:id" element={<ChallanDetail />} />
+
+          <Route path="/users" element={<UserList />} />
         </Route>
       </Route>
 
