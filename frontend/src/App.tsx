@@ -3,6 +3,9 @@ import { Layout } from './components/Layout';
 import { ProtectedRoute } from './auth/ProtectedRoute';
 import { Dashboard } from './pages/Dashboard';
 import { Login } from './pages/Login';
+import { ChallanDetail } from './pages/challans/ChallanDetail';
+import { ChallanForm } from './pages/challans/ChallanForm';
+import { ChallanList } from './pages/challans/ChallanList';
 import { CustomerDetailPage } from './pages/customers/CustomerDetail';
 import { CustomerForm } from './pages/customers/CustomerForm';
 import { CustomerList } from './pages/customers/CustomerList';
@@ -28,6 +31,10 @@ export function App() {
           <Route path="/products/new" element={<ProductForm />} />
           <Route path="/products/:id/edit" element={<ProductForm />} />
           <Route path="/stock-movements" element={<StockMovements />} />
+
+          <Route path="/challans" element={<ChallanList />} />
+          <Route path="/challans/new" element={<ChallanForm />} />
+          <Route path="/challans/:id" element={<ChallanDetail />} />
         </Route>
       </Route>
 
