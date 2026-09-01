@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { currentUser } from '../../middleware/authenticate';
+import { AppError } from '../../utils/AppError';
 import { parseId } from '../../utils/identifier';
 import {
   adjustStockSchema,
@@ -47,3 +48,11 @@ export async function adjustStock(req: Request, res: Response) {
   res.json(product);
 }
 
+export async function uploadImage(req: Request, res: Response) {
+  if (!req.file) {
+    throw new AppError(400, 'An image file is required');
+  }
+
+  const product = await productService.saveProductImage(parseId(req.params.id), req.file);
+  res.json(product);
+}

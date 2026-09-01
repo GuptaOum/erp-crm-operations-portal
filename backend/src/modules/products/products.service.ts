@@ -1,5 +1,6 @@
 import { Prisma, Product } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
+import { getProductImageUrl, isImageStorageEnabled, putProductImage } from '../../lib/s3';
 import { AppError } from '../../utils/AppError';
 import { buildMeta, getPageParams } from '../../utils/pagination';
 import {
@@ -9,12 +10,13 @@ import {
   UpdateProductInput,
 } from './products.schema';
 
-function toProductResponse(product: Product) {
+async function toProductResponse(product: Product) {
   const { imageKey, unitPrice, ...rest } = product;
 
   return {
     ...rest,
     unitPrice: Number(unitPrice),
+    imageUrl: await getProductImageUrl(imageKey),
   };
 }
 
@@ -44,7 +46,7 @@ export async function listProducts(query: ListProductsInput) {
   ]);
 
   return {
-    data: products.map(toProductResponse),
+    data: await Promise.all(products.map(toProductResponse)),
     meta: buildMeta(total, page, limit),
   };
 }
@@ -171,3 +173,19 @@ export async function adjustStock(id: string, input: AdjustStockInput, userId: s
   return toProductResponse(product);
 }
 
+export async function saveProductImage(id: string, file: Express.Multer.File) {
+  if (!isImageStorageEnabled()) {
+    throw new AppError(503, 'Image storage is not configured on this environment');
+  }
+
+  const existing = await prisma.product.findUnique({ where: { id } });
+
+  if (!existing) {
+    throw new AppError(404, 'Product not found');
+  }
+
+  const imageKey = await putProductImage(id, file);
+  const product = await prisma.product.update({ where: { id }, data: { imageKey } });
+
+  return toProductResponse(product);
+}
