@@ -1,0 +1,190 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  SALES
+  WAREHOUSE
+  ACCOUNTS
+}
+
+enum CustomerType {
+  RETAIL
+  WHOLESALE
+  DISTRIBUTOR
+}
+
+enum CustomerStatus {
+  LEAD
+  ACTIVE
+  INACTIVE
+}
+
+enum MovementType {
+  IN
+  OUT
+}
+
+enum ChallanStatus {
+  DRAFT
+  CONFIRMED
+  CANCELLED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  customers      Customer[]
+  followUps      CustomerNote[]
+  stockMovements StockMovement[]
+  challans       Challan[]
+
+  @@map("users")
+}
+
+model Customer {
+  id           String         @id @default(uuid())
+  name         String
+  mobile       String
+  email        String?
+  businessName String
+  gstNumber    String?
+  type         CustomerType
+  addressLine  String
+  city         String
+  state        String
+  pincode      String
+  status       CustomerStatus @default(LEAD)
+  followUpDate DateTime?
+  notes        String?
+  createdById  String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  createdBy User           @relation(fields: [createdById], references: [id])
+  followUps CustomerNote[]
+  challans  Challan[]
+
+  @@index([status])
+  @@index([type])
+  @@index([mobile])
+  @@map("customers")
+}
+
+model CustomerNote {
+  id           String    @id @default(uuid())
+  customerId   String
+  note         String
+  followUpDate DateTime?
+  createdById  String
+  createdAt    DateTime  @default(now())
+
+  customer  Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdBy User     @relation(fields: [createdById], references: [id])
+
+  @@index([customerId])
+  @@map("customer_notes")
+}
+
+model Product {
+  id            String   @id @default(uuid())
+  name          String
+  sku           String   @unique
+  category      String
+  unitPrice     Decimal  @db.Decimal(12, 2)
+  currentStock  Int      @default(0)
+  minStockAlert Int      @default(0)
+  location      String
+  imageKey      String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  stockMovements StockMovement[]
+  challanItems   ChallanItem[]
+
+  @@index([category])
+  @@map("products")
+}
+
+model StockMovement {
+  id            String       @id @default(uuid())
+  productId     String
+  quantity      Int
+  type          MovementType
+  reason        String
+  referenceType String?
+  referenceId   String?
+  createdById   String
+  createdAt     DateTime     @default(now())
+
+  product   Product @relation(fields: [productId], references: [id])
+  createdBy User    @relation(fields: [createdById], references: [id])
+
+  @@index([productId])
+  @@index([createdAt])
+  @@map("stock_movements")
+}
+
+model Challan {
+  id            String        @id @default(uuid())
+  challanNumber String        @unique
+  customerId    String
+  status        ChallanStatus @default(DRAFT)
+  totalQuantity Int           @default(0)
+  totalAmount   Decimal       @default(0) @db.Decimal(12, 2)
+  notes         String?
+  createdById   String
+  confirmedAt   DateTime?
+  cancelledAt   DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  customer  Customer      @relation(fields: [customerId], references: [id])
+  createdBy User          @relation(fields: [createdById], references: [id])
+  items     ChallanItem[]
+
+  @@index([status])
+  @@index([customerId])
+  @@index([createdAt])
+  @@map("challans")
+}
+
+model ChallanItem {
+  id          String  @id @default(uuid())
+  challanId   String
+  productId   String
+  productName String
+  productSku  String
+  unitPrice   Decimal @db.Decimal(12, 2)
+  quantity    Int
+  lineTotal   Decimal @db.Decimal(12, 2)
+
+  challan Challan @relation(fields: [challanId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([challanId])
+  @@map("challan_items")
+}
+
+model DocumentSequence {
+  docType    String
+  year       Int
+  lastNumber Int    @default(0)
+
+  @@id([docType, year])
+  @@map("document_sequences")
+}
