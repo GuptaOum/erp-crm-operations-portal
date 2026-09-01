@@ -287,6 +287,7 @@ async function seedChallans(salesUserId: string) {
       ],
     },
     salesUserId,
+    Role.SALES,
   );
 
   await createChallan(
@@ -300,6 +301,7 @@ async function seedChallans(salesUserId: string) {
       ],
     },
     salesUserId,
+    Role.SALES,
   );
 
   await createChallan(
@@ -310,6 +312,7 @@ async function seedChallans(salesUserId: string) {
       items: [{ productId: cable15.id, quantity: 15 }],
     },
     salesUserId,
+    Role.SALES,
   );
 }
 

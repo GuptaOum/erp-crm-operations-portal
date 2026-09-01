@@ -7,9 +7,9 @@ export const customerRoutes = Router();
 
 customerRoutes.use(authenticate);
 
-customerRoutes.get('/', controller.list);
-customerRoutes.get('/:id', controller.detail);
-customerRoutes.get('/:id/notes', controller.notes);
+customerRoutes.get('/', authorize('ADMIN', 'SALES', 'ACCOUNTS'), controller.list);
+customerRoutes.get('/:id', authorize('ADMIN', 'SALES', 'ACCOUNTS'), controller.detail);
+customerRoutes.get('/:id/notes', authorize('ADMIN', 'SALES', 'ACCOUNTS'), controller.notes);
 
 customerRoutes.post('/', authorize('ADMIN', 'SALES'), controller.create);
 customerRoutes.patch('/:id', authorize('ADMIN', 'SALES'), controller.update);

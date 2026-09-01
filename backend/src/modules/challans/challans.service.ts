@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { AppError } from '../../utils/AppError';
 import { nextChallanNumber } from '../../utils/documentNumber';
@@ -25,9 +25,16 @@ const challanInclude = {
 
 export type ChallanRecord = Prisma.ChallanGetPayload<{ include: typeof challanInclude }>;
 
-function toChallanResponse(challan: ChallanRecord) {
+const FULL_CUSTOMER_ROLES: Role[] = ['ADMIN', 'SALES', 'ACCOUNTS'];
+
+function toChallanResponse(challan: ChallanRecord, role: Role) {
+  const { gstNumber, ...deliveryDetails } = challan.customer;
+
   return {
     ...challan,
+    customer: FULL_CUSTOMER_ROLES.includes(role)
+      ? challan.customer
+      : { ...deliveryDetails, gstNumber: null },
     totalAmount: Number(challan.totalAmount),
     items: challan.items.map((item) => ({
       ...item,
@@ -93,7 +100,7 @@ async function confirmWithinTransaction(
   });
 }
 
-export async function listChallans(query: ListChallansInput) {
+export async function listChallans(query: ListChallansInput, role: Role) {
   const { page, limit, skip } = getPageParams(query.page, query.limit);
   const where: Prisma.ChallanWhereInput = {};
 
@@ -124,7 +131,10 @@ export async function listChallans(query: ListChallansInput) {
     prisma.challan.count({ where }),
   ]);
 
-  return { data: challans.map(toChallanResponse), meta: buildMeta(total, page, limit) };
+  return {
+    data: challans.map((challan) => toChallanResponse(challan, role)),
+    meta: buildMeta(total, page, limit),
+  };
 }
 
 export async function getChallanRecord(id: string): Promise<ChallanRecord> {
@@ -137,11 +147,15 @@ export async function getChallanRecord(id: string): Promise<ChallanRecord> {
   return challan;
 }
 
-export async function getChallan(id: string) {
-  return toChallanResponse(await getChallanRecord(id));
+export async function getChallan(id: string, role: Role) {
+  return toChallanResponse(await getChallanRecord(id), role);
 }
 
-export async function createChallan(input: CreateChallanInput, userId: string) {
+export async function createChallan(
+  input: CreateChallanInput,
+  userId: string,
+  role: Role,
+) {
   const challan = await prisma.$transaction(async (tx) => {
     const customer = await tx.customer.findUnique({ where: { id: input.customerId } });
 
@@ -199,15 +213,15 @@ export async function createChallan(input: CreateChallanInput, userId: string) {
     return created;
   });
 
-  return toChallanResponse(challan);
+  return toChallanResponse(challan, role);
 }
 
-export async function confirmChallan(id: string, userId: string) {
+export async function confirmChallan(id: string, userId: string, role: Role) {
   const challan = await prisma.$transaction((tx) => confirmWithinTransaction(tx, id, userId));
-  return toChallanResponse(challan);
+  return toChallanResponse(challan, role);
 }
 
-export async function cancelChallan(id: string, userId: string) {
+export async function cancelChallan(id: string, userId: string, role: Role) {
   const challan = await prisma.$transaction(async (tx) => {
     const existing = await tx.challan.findUnique({ where: { id }, include: { items: true } });
 
@@ -247,5 +261,5 @@ export async function cancelChallan(id: string, userId: string) {
     });
   });
 
-  return toChallanResponse(challan);
+  return toChallanResponse(challan, role);
 }

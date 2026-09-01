@@ -131,13 +131,13 @@ export interface Challan {
 
 export interface DashboardSummary {
   totals: {
-    totalCustomers: number;
-    activeCustomers: number;
-    leads: number;
     totalProducts: number;
-    lowStockProducts: number;
     draftChallans: number;
     confirmedChallans: number;
+    totalCustomers?: number;
+    activeCustomers?: number;
+    leads?: number;
+    lowStockProducts?: number;
   };
   recentChallans: {
     id: string;

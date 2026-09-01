@@ -308,9 +308,31 @@ Run **Auth / Login** first; it stores the token for every other request.
 
 ## Roles and permissions
 
+Authorisation is enforced in the API, not in the interface. The navigation and dashboard hide what a
+role cannot use, but that is a usability choice; removing it would change nothing, because every
+route is guarded server side and answers 403.
+
+**What each role can read.** A warehouse user has no business reason to hold customer contact
+details, so those endpoints are closed to it rather than merely hidden.
+
+| Endpoint | Admin | Sales | Warehouse | Accounts |
+| --- | :---: | :---: | :---: | :---: |
+| `/customers` and notes | yes | yes | | yes |
+| `/products` | yes | yes | yes | yes |
+| `/stock-movements` | yes | | yes | |
+| `/challans` | yes | yes | yes | yes |
+| `/dashboard/summary` | everything | no stock alerts | no customer figures or follow ups | no stock alerts |
+
+The dashboard response is assembled per role rather than filtered in the browser, so a warehouse
+token never receives customer counts or follow up names in the first place.
+
+A challan carries the delivery address a warehouse user needs, but their copy of the customer block
+omits the GST number, which is billing information rather than dispatch information.
+
+**What each role can change.**
+
 | Action | Admin | Sales | Warehouse | Accounts |
 | --- | :---: | :---: | :---: | :---: |
-| Read everything | yes | yes | yes | yes |
 | Create and edit customers | yes | yes | | |
 | Add follow up notes | yes | yes | | |
 | Create and edit products | yes | | yes | |
@@ -318,6 +340,9 @@ Run **Auth / Login** first; it stores the token for every other request.
 | Create and cancel challans | yes | yes | | |
 | Confirm challans | yes | yes | yes | |
 | Download challan PDF | yes | yes | | yes |
+
+Stock is never editable directly on the product form. Every change is a stock movement, so the log
+is the authoritative history rather than a side effect.
 
 ## Deployment
 
