@@ -6,6 +6,9 @@ import { Login } from './pages/Login';
 import { CustomerDetailPage } from './pages/customers/CustomerDetail';
 import { CustomerForm } from './pages/customers/CustomerForm';
 import { CustomerList } from './pages/customers/CustomerList';
+import { ProductForm } from './pages/products/ProductForm';
+import { ProductList } from './pages/products/ProductList';
+import { StockMovements } from './pages/products/StockMovements';
 
 export function App() {
   return (
@@ -20,6 +23,11 @@ export function App() {
           <Route path="/customers/new" element={<CustomerForm />} />
           <Route path="/customers/:id" element={<CustomerDetailPage />} />
           <Route path="/customers/:id/edit" element={<CustomerForm />} />
+
+          <Route path="/products" element={<ProductList />} />
+          <Route path="/products/new" element={<ProductForm />} />
+          <Route path="/products/:id/edit" element={<ProductForm />} />
+          <Route path="/stock-movements" element={<StockMovements />} />
         </Route>
       </Route>
 
