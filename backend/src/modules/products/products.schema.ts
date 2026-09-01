@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { emptyToUndefined } from '../../utils/schema';
 
 const SKU_PATTERN = /^[A-Z0-9][A-Z0-9-]*$/;
 
@@ -28,10 +29,13 @@ export const listProductsSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
   search: z.string().trim().optional(),
   category: z.string().trim().optional(),
-  lowStock: z
-    .enum(['true', 'false'])
-    .transform((value) => value === 'true')
-    .optional(),
+  lowStock: z.preprocess(
+    emptyToUndefined,
+    z
+      .enum(['true', 'false'])
+      .transform((value) => value === 'true')
+      .optional(),
+  ),
 });
 
 export const adjustStockSchema = z.object({

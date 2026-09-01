@@ -25,6 +25,14 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
+  if (config.params) {
+    config.params = Object.fromEntries(
+      Object.entries(config.params).filter(
+        ([, value]) => value !== '' && value !== null && value !== undefined,
+      ),
+    );
+  }
+
   return config;
 });
 

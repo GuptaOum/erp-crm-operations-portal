@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { emptyToUndefined } from '../../utils/schema';
 
 const GST_PATTERN = /^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z\d]Z[A-Z\d]$/;
 const MOBILE_PATTERN = /^[6-9]\d{9}$/;
@@ -31,8 +32,8 @@ export const listCustomersSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   search: z.string().trim().optional(),
-  status: z.enum(CUSTOMER_STATUSES).optional(),
-  type: z.enum(CUSTOMER_TYPES).optional(),
+  status: z.preprocess(emptyToUndefined, z.enum(CUSTOMER_STATUSES).optional()),
+  type: z.preprocess(emptyToUndefined, z.enum(CUSTOMER_TYPES).optional()),
 });
 
 export const createNoteSchema = z.object({
