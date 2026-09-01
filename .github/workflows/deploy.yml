@@ -67,8 +67,10 @@ jobs:
 
       - name: Roll out the new image
         run: |
+          asg="${{ vars.AUTOSCALING_GROUP }}"
+
           desired=$(aws autoscaling describe-auto-scaling-groups \
-            --auto-scaling-group-names "${{ vars.AUTOSCALING_GROUP }}" \
+            --auto-scaling-group-names "$asg" \
             --query 'AutoScalingGroups[0].DesiredCapacity' --output text)
 
           if [ "$desired" = "0" ] || [ "$desired" = "None" ]; then
@@ -76,6 +78,22 @@ jobs:
             exit 0
           fi
 
+          while true; do
+            status=$(aws autoscaling describe-instance-refreshes \
+              --auto-scaling-group-name "$asg" \
+              --query 'InstanceRefreshes[0].Status' --output text)
+
+            case "$status" in
+              InProgress | Pending | Cancelling)
+                echo "waiting for the in flight refresh to finish, currently $status"
+                sleep 30
+                ;;
+              *)
+                break
+                ;;
+            esac
+          done
+
           aws autoscaling start-instance-refresh \
-            --auto-scaling-group-name "${{ vars.AUTOSCALING_GROUP }}" \
+            --auto-scaling-group-name "$asg" \
             --preferences MinHealthyPercentage=50
