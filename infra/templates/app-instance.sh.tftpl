@@ -1,0 +1,37 @@
+#!/bin/bash
+set -euo pipefail
+
+dnf update -y
+dnf install -y docker
+systemctl enable --now docker
+
+REGION="${region}"
+PREFIX="${parameter_prefix}"
+IMAGE="${image}"
+
+aws ecr get-login-password --region "$REGION" \
+  | docker login --username AWS --password-stdin "${registry}"
+
+read_parameter() {
+  aws ssm get-parameter --with-decryption --region "$REGION" \
+    --name "$PREFIX/$1" --query Parameter.Value --output text
+}
+
+DATABASE_URL="$(read_parameter DATABASE_URL)"
+JWT_SECRET="$(read_parameter JWT_SECRET)"
+S3_IMAGE_BUCKET="$(read_parameter S3_IMAGE_BUCKET)"
+
+docker pull "$IMAGE"
+
+docker run -d \
+  --name portal-api \
+  --restart unless-stopped \
+  -p 4000:4000 \
+  -e NODE_ENV=production \
+  -e PORT=4000 \
+  -e CORS_ORIGIN='*' \
+  -e AWS_REGION="$REGION" \
+  -e DATABASE_URL="$DATABASE_URL" \
+  -e JWT_SECRET="$JWT_SECRET" \
+  -e S3_IMAGE_BUCKET="$S3_IMAGE_BUCKET" \
+  "$IMAGE"
