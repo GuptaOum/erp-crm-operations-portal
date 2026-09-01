@@ -10,6 +10,7 @@ resource "aws_instance" "single_server" {
 
   user_data = templatefile("${path.module}/templates/single-server.sh.tftpl", {
     compose_version = "v5.5.0"
+    buildx_version  = "v0.36.1"
   })
 
   root_block_device {
