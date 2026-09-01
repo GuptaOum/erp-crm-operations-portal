@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import { env } from './config/env';
 import { errorHandler, notFound } from './middleware/errorHandler';
 import { authRoutes } from './modules/auth/auth.routes';
+import { challanRoutes } from './modules/challans/challans.routes';
 import { customerRoutes } from './modules/customers/customers.routes';
 import { healthRoutes } from './modules/health/health.routes';
 import { productRoutes } from './modules/products/products.routes';
@@ -25,6 +26,7 @@ export function createApp() {
   app.use('/api/customers', customerRoutes);
   app.use('/api/products', productRoutes);
   app.use('/api/stock-movements', stockRoutes);
+  app.use('/api/challans', challanRoutes);
 
   app.use(notFound);
   app.use(errorHandler);
