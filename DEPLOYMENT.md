@@ -1,5 +1,39 @@
 # Deployment
 
+## Quick reference
+
+Two commands cover the whole lifecycle. Both are idempotent and safe to re-run.
+
+```bash
+./scripts/up.sh 1     # bring the whole environment up at stage 1, 2 or 3
+```
+
+```bash
+./scripts/down.sh     # destroy everything and confirm nothing is still billing
+```
+
+`up.sh` applies the Terraform for the stage you ask for, waits for the SSM agent, deploys the
+containers, seeds the database and issues a Let's Encrypt certificate, then prints the live URL.
+`down.sh` runs `terraform destroy` and then checks NAT gateways, load balancers, RDS, Auto Scaling
+groups, CloudFront, instances and Elastic IPs, failing loudly if anything survived.
+
+Stage 3 is the exception to the single command, because the Auto Scaling group boots from an image
+that has to exist first. `up.sh 3` builds the infrastructure with zero instances and prints the two
+follow up commands:
+
+```bash
+gh workflow run deploy.yml
+terraform -chdir=infra apply -auto-approve -var stage=3 -var asg_min_size=2
+```
+
+First time only, before any of the above:
+
+```bash
+cd infra
+cp terraform.tfvars.example terraform.tfvars   # then fill in the two secrets and your email
+terraform init
+```
+
 Infrastructure lives in [`infra/`](infra) as Terraform and targets `ap-south-1`. A single `stage`
 variable controls how much of the architecture exists, so the environment grows without rewriting
 anything.
