@@ -6,14 +6,22 @@ out of the warehouse.
 
 ## Live environment
 
-| | |
-| --- | --- |
-| Portal | https://3-110-38-242.nip.io |
-| API | https://3-110-38-242.nip.io/api |
-| Health check | https://3-110-38-242.nip.io/api/health |
-| Region | ap-south-1, single EC2 instance behind nginx, Let's Encrypt certificate |
+The AWS environment is provisioned on demand rather than left running, so there is no permanent
+public URL. Everything needed to bring it up is in this repository and takes about ten minutes:
 
-Sign in with any account from [Test accounts](#test-accounts); all use the password `Portal@2026`.
+```bash
+cd infra
+terraform apply -var stage=1
+```
+
+That prints `portal_host`, an `nip.io` hostname derived from the new Elastic IP. The remaining
+steps, deploying the containers and issuing the TLS certificate, are in
+[DEPLOYMENT.md](DEPLOYMENT.md#stage-1-single-server).
+
+It has been deployed and verified end to end: login for all four roles, stock deduction on confirm,
+rejection of an oversell with the stock left untouched, stock restored on cancel, challan PDF
+download, and role based access denials. A single always on `t3.small` costs about 0.72 USD a day
+in `ap-south-1`, so the environment is destroyed between demonstrations with `terraform destroy`.
 
 ## Contents
 
