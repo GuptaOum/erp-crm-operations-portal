@@ -4,8 +4,20 @@ A mini ERP and CRM portal for a wholesale distribution business. Internal staff 
 and follow ups, maintain the product catalogue and stock, and raise sales challans that move stock
 out of the warehouse.
 
+## Live environment
+
+| | |
+| --- | --- |
+| Portal | https://3-110-38-242.nip.io |
+| API | https://3-110-38-242.nip.io/api |
+| Health check | https://3-110-38-242.nip.io/api/health |
+| Region | ap-south-1, single EC2 instance behind nginx, Let's Encrypt certificate |
+
+Sign in with any account from [Test accounts](#test-accounts); all use the password `Portal@2026`.
+
 ## Contents
 
+- [Live environment](#live-environment)
 - [Stack](#stack)
 - [Architecture](#architecture)
 - [Modules](#modules)
