@@ -6,22 +6,20 @@ out of the warehouse.
 
 ## Live environment
 
-The AWS environment is provisioned on demand rather than left running, so there is no permanent
-public URL. Everything needed to bring it up is in this repository and takes about ten minutes:
+| | |
+| --- | --- |
+| Portal | https://13-207-31-87.nip.io |
+| API | https://13-207-31-87.nip.io/api |
+| Stage | 2, application on EC2 with PostgreSQL on RDS Multi-AZ |
+| Region | ap-south-1, primary and standby across two availability zones |
 
-```bash
-cd infra
-terraform apply -var stage=1
-```
+Sign in with any account from [Test accounts](#test-accounts); all use the password `Portal@2026`.
 
-That prints `portal_host`, an `nip.io` hostname derived from the new Elastic IP. The remaining
-steps, deploying the containers and issuing the TLS certificate, are in
-[DEPLOYMENT.md](DEPLOYMENT.md#stage-1-single-server).
-
-It has been deployed and verified end to end: login for all four roles, stock deduction on confirm,
-rejection of an oversell with the stock left untouched, stock restored on cancel, challan PDF
-download, and role based access denials. A single always on `t3.small` costs about 0.72 USD a day
-in `ap-south-1`, so the environment is destroyed between demonstrations with `terraform destroy`.
+The environment is destroyed between demonstrations to avoid running cost, so if the link is not
+answering it can be rebuilt in about fifteen minutes with `terraform apply -var stage=2` followed by
+the steps in [DEPLOYMENT.md](DEPLOYMENT.md). Failover has been verified by forcing one with
+`reboot-db-instance --force-failover`: the database moved from `ap-south-1b` to `ap-south-1a` and the
+API recovered on its own after roughly twenty five seconds without a restart.
 
 ## Contents
 
