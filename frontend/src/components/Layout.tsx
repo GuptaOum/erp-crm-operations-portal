@@ -1,14 +1,27 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { can, Permission } from '../auth/permissions';
 import { titleCase } from '../utils/format';
 
-const NAV_ITEMS = [
+interface NavItem {
+  to: string;
+  label: string;
+  end: boolean;
+  permission?: Permission;
+}
+
+const NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'Dashboard', end: true },
-  { to: '/customers', label: 'Customers', end: false },
-  { to: '/products', label: 'Products', end: false },
-  { to: '/stock-movements', label: 'Stock movements', end: false },
-  { to: '/challans', label: 'Sales challans', end: false },
+  { to: '/customers', label: 'Customers', end: false, permission: 'viewCustomers' },
+  { to: '/products', label: 'Products', end: false, permission: 'viewInventory' },
+  {
+    to: '/stock-movements',
+    label: 'Stock movements',
+    end: false,
+    permission: 'viewStockMovements',
+  },
+  { to: '/challans', label: 'Sales challans', end: false, permission: 'viewChallans' },
 ];
 
 export function Layout() {
@@ -21,6 +34,10 @@ export function Layout() {
     navigate('/login');
   }
 
+  const visibleItems = NAV_ITEMS.filter(
+    (item) => !item.permission || can(user?.role, item.permission),
+  );
+
   return (
     <div className="shell">
       <aside className={menuOpen ? 'sidebar open' : 'sidebar'}>
@@ -29,7 +46,7 @@ export function Layout() {
           <span>ERP and CRM</span>
         </div>
         <nav className="sidebar-nav">
-          {NAV_ITEMS.map((item) => (
+          {visibleItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
