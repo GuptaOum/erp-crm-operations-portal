@@ -1,0 +1,6 @@
+services:
+  api:
+    depends_on: !reset []
+
+  db:
+    profiles: ["local-database"]
