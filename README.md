@@ -350,6 +350,14 @@ Base path `/api`. All routes except login and the health checks require
 `Authorization: Bearer <token>`. List endpoints accept `page` and `limit` and return
 `{ data, meta }` where meta carries `total`, `page`, `limit` and `totalPages`.
 
+### Postman
+
+[`postman/operations-portal.postman_collection.json`](postman/operations-portal.postman_collection.json)
+covers all thirty nine endpoints. Import it and send **Auth → Login**: the response test stores the
+token on the collection, and every other request inherits it as bearer auth, so nothing has to be
+pasted by hand. The `baseUrl` variable points at the live API; change it to
+`http://localhost:4000/api` to run the same collection against a local server.
+
 | Method | Path | Purpose |
 | --- | --- | --- |
 | GET | `/health` | Liveness, used by the load balancer |

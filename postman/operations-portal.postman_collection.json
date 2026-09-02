@@ -9,7 +9,7 @@
     "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:4000/api" },
+    { "key": "baseUrl", "value": "https://erp-portal-api.onrender.com/api" },
     { "key": "token", "value": "" },
     { "key": "staffUserId", "value": "" },
     { "key": "customerId", "value": "" },
