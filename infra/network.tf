@@ -59,19 +59,19 @@ resource "aws_route_table_association" "public" {
 }
 
 resource "aws_eip" "nat" {
-  count  = local.load_balanced ? 1 : 0
+  count  = local.load_balanced ? 2 : 0
   domain = "vpc"
 
-  tags = { Name = "${local.name}-nat-eip" }
+  tags = { Name = "${local.name}-nat-eip-${count.index + 1}" }
 }
 
 resource "aws_nat_gateway" "main" {
-  count         = local.load_balanced ? 1 : 0
-  allocation_id = aws_eip.nat[0].id
-  subnet_id     = aws_subnet.public[0].id
+  count         = local.load_balanced ? 2 : 0
+  allocation_id = aws_eip.nat[count.index].id
+  subnet_id     = aws_subnet.public[count.index].id
   depends_on    = [aws_internet_gateway.main]
 
-  tags = { Name = "${local.name}-nat" }
+  tags = { Name = "${local.name}-nat-${count.index + 1}" }
 }
 
 resource "aws_route_table" "private" {
@@ -85,7 +85,7 @@ resource "aws_route" "private_nat" {
   count                  = local.load_balanced ? 2 : 0
   route_table_id         = aws_route_table.private[count.index].id
   destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = aws_nat_gateway.main[0].id
+  nat_gateway_id         = aws_nat_gateway.main[count.index].id
 }
 
 resource "aws_route_table_association" "private" {

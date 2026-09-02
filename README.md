@@ -153,7 +153,7 @@ security group accepts port 5432 from the application security group only.
 | Compute | Auto Scaling group of `t3.small`, one per private subnet, API on port 4000 |
 | Ingress | ALB in the public subnets, security group allows 4000 to the app group only |
 | Database | RDS PostgreSQL 17 Multi-AZ, 5432 from the app security group only |
-| Egress | One NAT gateway in zone A, shared by both private subnets |
+| Egress | One NAT gateway per zone, each private subnet routing through its own |
 | Edge | One CloudFront distribution, `default /*` to S3 and `/api/*` to the ALB |
 | Shell access | SSM Session Manager, no SSH ingress anywhere in the VPC |
 | Deploys | GitHub Actions over OIDC, image to ECR and build to S3, no stored AWS keys |
@@ -456,7 +456,7 @@ including TLS, stage transitions and the teardown checklist, is in [DEPLOYMENT.m
 | Tokens | Eight hours, no refresh and no revocation list, so a password reset blocks the old password but not an open session |
 | Onboarding | Admin sets the password and tells the user; the portal sends no mail |
 | Select lists | The challan form loads up to 100 customers and products rather than paging; fine at this volume, not at 10,000 products |
-| One NAT gateway | Deliberate cost trade off. Losing zone A cuts outbound internet for zone B instances; inbound and the database still fail over |
+| NAT cost | Two NAT gateways, one per zone, so losing a zone does not cut outbound internet for the survivor. They are the largest hourly line item at roughly 0.11 USD an hour combined, which is why the stack is destroyed between demonstrations |
 | Image reaping | Replacing an image leaves the old object. Bucket versioning is on, so nothing is lost and nothing is cleaned up |
 | Deregistration | Hard terminating an instance costs a few requests, because the health check runs every 30s. A lifecycle hook would close that window |
 | SPA routing | Handled by a CloudFront Function, not custom error responses, which would rewrite genuine API 403 and 404 replies into the index page |
