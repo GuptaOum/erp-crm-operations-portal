@@ -63,6 +63,16 @@ output "autoscaling_group_name" {
   value       = local.load_balanced ? aws_autoscaling_group.app[0].name : null
 }
 
+output "db_proxy_endpoint" {
+  description = "Connection pooler the application writes through, stage 3"
+  value       = local.load_balanced ? aws_db_proxy.main[0].endpoint : null
+}
+
+output "redis_endpoint" {
+  description = "Primary Redis endpoint, stage 3"
+  value       = local.load_balanced ? aws_elasticache_replication_group.main[0].primary_endpoint_address : null
+}
+
 output "github_deploy_role_arn" {
   description = "Role assumed by GitHub Actions"
   value       = var.github_repository != "" ? aws_iam_role.github_deploy[0].arn : null

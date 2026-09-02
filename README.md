@@ -57,7 +57,8 @@ URL is quoted here. Both resilience claims were measured, not assumed:
 | Frontend | React 19, Vite, React Router, hand written CSS |
 | Documents | PDFKit for challan PDFs |
 | Object storage | Amazon S3 with presigned read URLs |
-| Infrastructure | Terraform, Docker, Amazon EC2, RDS, ALB, CloudFront |
+| Shared state | Redis, optional, holds the login rate limit across instances |
+| Infrastructure | Terraform, Docker, Amazon EC2, RDS, RDS Proxy, ElastiCache, ALB, CloudFront |
 | CI/CD | GitHub Actions with OIDC, no stored AWS keys |
 
 ## Architecture
@@ -153,10 +154,35 @@ security group accepts port 5432 from the application security group only.
 | Compute | Auto Scaling group of `t3.small`, one per private subnet, API on port 4000 |
 | Ingress | ALB in the public subnets, security group allows 4000 to the app group only |
 | Database | RDS PostgreSQL 17 Multi-AZ, 5432 from the app security group only |
+| Pooling | RDS Proxy in front of the database, so instances share one pooled set of connections instead of each opening its own |
+| Shared state | ElastiCache Redis, two nodes with automatic failover, holds the login rate limit, reachable from the app security group only |
 | Egress | One NAT gateway per zone, each private subnet routing through its own |
 | Edge | One CloudFront distribution, `default /*` to S3 and `/api/*` to the ALB |
 | Shell access | SSM Session Manager, no SSH ingress anywhere in the VPC |
 | Deploys | GitHub Actions over OIDC, image to ECR and build to S3, no stored AWS keys |
+
+### What Redis is used for, and what it is not
+
+Running more than one instance breaks something that looks fine on a single box: the login rate
+limiter kept its counters in process, so two instances allowed twice the attempts and four allowed
+four times. Redis holds those counters instead, so the limit is the limit no matter how many
+instances are running. That is the whole job.
+
+**Nothing else is cached, and both omissions are deliberate.**
+
+The dashboard is not cached. This is an internal portal for a few dozen staff, so those aggregates
+are read a few hundred times a day; caching them would buy milliseconds and cost invalidation bugs.
+
+The account lookup is not cached either, and that one was tried and removed. `authenticate` reloads
+the account behind the token on every request, which makes it the most repeated query here and an
+obvious cache candidate. It also underwrites a guarantee: deactivating a user ends their session
+immediately, and a role change applies on their very next request. A cache with any TTL weakens
+that, and only invalidating writes made through this API would still miss a change made directly in
+the database. The guarantee is worth more than the milliseconds, so the query stays.
+
+Redis is optional. With `REDIS_URL` unset the limiter counts per process, which is how the free tier
+deployment runs. If Redis is configured but unreachable the limiter fails open and logs once rather
+than answering 500.
 
 ## Modules
 
@@ -454,6 +480,8 @@ including TLS, stage transitions and the teardown checklist, is in [DEPLOYMENT.m
 | Image upload | Inactive on the free deployment. `S3_IMAGE_BUCKET` is empty, so uploads are refused and the rest of the catalogue is unaffected |
 | Frontend tests | API is covered end to end; React is verified by hand and by the typechecker only |
 | Tokens | Eight hours, no refresh and no revocation list, so a password reset blocks the old password but not an open session |
+| Proxy pinning | RDS Proxy multiplexes best on simple queries. Prisma uses prepared statements, which pin a session to a connection for its lifetime, so the proxy gives connection reuse and failover survival here rather than full multiplexing |
+| Redis is best effort | If Redis is unreachable the login limiter fails **open**, allowing the request and logging once rather than answering 500. That is a deliberate availability choice on an internal portal; a public signup form would be a good argument for failing closed instead |
 | Onboarding | Admin sets the password and tells the user; the portal sends no mail |
 | Select lists | The challan form loads up to 100 customers and products rather than paging; fine at this volume, not at 10,000 products |
 | NAT cost | Two NAT gateways, one per zone, so losing a zone does not cut outbound internet for the survivor. They are the largest hourly line item at roughly 0.11 USD an hour combined, which is why the stack is destroyed between demonstrations |

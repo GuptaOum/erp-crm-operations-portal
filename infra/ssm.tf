@@ -14,11 +14,34 @@ resource "aws_ssm_parameter" "image_bucket" {
   tags = { Name = "${local.name}-image-bucket" }
 }
 
+locals {
+  database_url_direct = local.managed_database ? "postgresql://${var.db_username}:${urlencode(var.db_password)}@${aws_db_instance.main[0].endpoint}/${var.db_name}" : ""
+  database_url_pooled = local.load_balanced ? "postgresql://${var.db_username}:${urlencode(var.db_password)}@${aws_db_proxy.main[0].endpoint}:5432/${var.db_name}?sslmode=require" : ""
+}
+
 resource "aws_ssm_parameter" "database_url" {
   count = local.managed_database ? 1 : 0
   name  = "/${local.name}/DATABASE_URL"
   type  = "SecureString"
-  value = "postgresql://${var.db_username}:${urlencode(var.db_password)}@${aws_db_instance.main[0].endpoint}/${var.db_name}"
+  value = local.load_balanced ? local.database_url_pooled : local.database_url_direct
 
   tags = { Name = "${local.name}-database-url" }
+}
+
+resource "aws_ssm_parameter" "database_url_direct" {
+  count = local.load_balanced ? 1 : 0
+  name  = "/${local.name}/DATABASE_URL_DIRECT"
+  type  = "SecureString"
+  value = local.database_url_direct
+
+  tags = { Name = "${local.name}-database-url-direct" }
+}
+
+resource "aws_ssm_parameter" "redis_url" {
+  count = local.load_balanced ? 1 : 0
+  name  = "/${local.name}/REDIS_URL"
+  type  = "String"
+  value = "redis://${aws_elasticache_replication_group.main[0].primary_endpoint_address}:6379"
+
+  tags = { Name = "${local.name}-redis-url" }
 }

@@ -24,6 +24,24 @@ resource "aws_security_group" "rds" {
   tags = { Name = "${local.name}-rds-sg" }
 }
 
+resource "aws_security_group" "redis" {
+  count       = local.load_balanced ? 1 : 0
+  name        = "${local.name}-redis"
+  description = "Redis reachable only from the application"
+  vpc_id      = aws_vpc.main.id
+
+  tags = { Name = "${local.name}-redis-sg" }
+}
+
+resource "aws_security_group" "db_proxy" {
+  count       = local.load_balanced ? 1 : 0
+  name        = "${local.name}-db-proxy"
+  description = "Connection pooler in front of PostgreSQL"
+  vpc_id      = aws_vpc.main.id
+
+  tags = { Name = "${local.name}-db-proxy-sg" }
+}
+
 resource "aws_vpc_security_group_ingress_rule" "alb_http" {
   count             = local.load_balanced ? 1 : 0
   security_group_id = aws_security_group.alb[0].id
@@ -85,4 +103,41 @@ resource "aws_vpc_security_group_ingress_rule" "rds_from_web" {
   to_port                      = 5432
   ip_protocol                  = "tcp"
   description                  = "PostgreSQL from application instances"
+}
+
+resource "aws_vpc_security_group_ingress_rule" "rds_from_proxy" {
+  count                        = local.load_balanced ? 1 : 0
+  security_group_id            = aws_security_group.rds[0].id
+  referenced_security_group_id = aws_security_group.db_proxy[0].id
+  from_port                    = 5432
+  to_port                      = 5432
+  ip_protocol                  = "tcp"
+  description                  = "PostgreSQL from the connection pooler"
+}
+
+resource "aws_vpc_security_group_ingress_rule" "proxy_from_web" {
+  count                        = local.load_balanced ? 1 : 0
+  security_group_id            = aws_security_group.db_proxy[0].id
+  referenced_security_group_id = aws_security_group.web.id
+  from_port                    = 5432
+  to_port                      = 5432
+  ip_protocol                  = "tcp"
+  description                  = "Pooler reachable from application instances only"
+}
+
+resource "aws_vpc_security_group_egress_rule" "proxy_all" {
+  count             = local.load_balanced ? 1 : 0
+  security_group_id = aws_security_group.db_proxy[0].id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "-1"
+}
+
+resource "aws_vpc_security_group_ingress_rule" "redis_from_web" {
+  count                        = local.load_balanced ? 1 : 0
+  security_group_id            = aws_security_group.redis[0].id
+  referenced_security_group_id = aws_security_group.web.id
+  from_port                    = 6379
+  to_port                      = 6379
+  ip_protocol                  = "tcp"
+  description                  = "Redis from application instances only"
 }

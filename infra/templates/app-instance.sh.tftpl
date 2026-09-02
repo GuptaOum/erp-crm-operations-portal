@@ -20,6 +20,7 @@ read_parameter() {
 DATABASE_URL="$(read_parameter DATABASE_URL)"
 JWT_SECRET="$(read_parameter JWT_SECRET)"
 S3_IMAGE_BUCKET="$(read_parameter S3_IMAGE_BUCKET)"
+REDIS_URL="$(read_parameter REDIS_URL || true)"
 
 docker pull "$IMAGE"
 
@@ -34,4 +35,5 @@ docker run -d \
   -e DATABASE_URL="$DATABASE_URL" \
   -e JWT_SECRET="$JWT_SECRET" \
   -e S3_IMAGE_BUCKET="$S3_IMAGE_BUCKET" \
+  -e REDIS_URL="$REDIS_URL" \
   "$IMAGE"
