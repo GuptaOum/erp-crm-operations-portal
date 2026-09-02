@@ -5,7 +5,7 @@ services:
     plan: free
     region: singapore
     rootDir: backend
-    buildCommand: npm ci && npm run build
+    buildCommand: npm install && npm run build
     startCommand: npx prisma migrate deploy && npm start
     healthCheckPath: /api/health
     autoDeploy: true
@@ -31,7 +31,7 @@ services:
     name: erp-portal-web
     runtime: static
     rootDir: frontend
-    buildCommand: npm ci && npm run build
+    buildCommand: npm install && npm run build
     staticPublishPath: dist
     autoDeploy: true
     envVars:
