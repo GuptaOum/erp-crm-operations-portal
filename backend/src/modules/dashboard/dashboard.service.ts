@@ -1,5 +1,7 @@
 import { Role } from '@prisma/client';
+import { env } from '../../config/env';
 import { prisma } from '../../lib/prisma';
+import { cacheGetJson, cacheSetJson } from '../../lib/redis';
 
 const lowStockWhere = { currentStock: { lte: prisma.product.fields.minStockAlert } };
 
@@ -7,7 +9,27 @@ const CUSTOMER_ROLES: Role[] = ['ADMIN', 'SALES', 'ACCOUNTS'];
 const STOCK_ROLES: Role[] = ['ADMIN', 'WAREHOUSE'];
 const FOLLOW_UP_ROLES: Role[] = ['ADMIN', 'SALES'];
 
+type Summary = Awaited<ReturnType<typeof buildSummary>>;
+
 export async function getSummary(role: Role) {
+  if (env.dashboardCacheSeconds <= 0) {
+    return buildSummary(role);
+  }
+
+  const key = `dashboard:${role}`;
+  const cached = await cacheGetJson<Summary>(key);
+
+  if (cached) {
+    return cached;
+  }
+
+  const summary = await buildSummary(role);
+  await cacheSetJson(key, summary, env.dashboardCacheSeconds);
+
+  return summary;
+}
+
+async function buildSummary(role: Role) {
   const seesCustomers = CUSTOMER_ROLES.includes(role);
   const seesStock = STOCK_ROLES.includes(role);
   const seesFollowUps = FOLLOW_UP_ROLES.includes(role);

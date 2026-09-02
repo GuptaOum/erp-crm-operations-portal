@@ -51,7 +51,7 @@ async function confirmWithinTransaction(
 ) {
   const challan = await tx.challan.findUnique({
     where: { id: challanId },
-    include: { items: true },
+    include: { items: { orderBy: { productId: 'asc' } } },
   });
 
   if (!challan) {
@@ -223,7 +223,10 @@ export async function confirmChallan(id: string, userId: string, role: Role) {
 
 export async function cancelChallan(id: string, userId: string, role: Role) {
   const challan = await prisma.$transaction(async (tx) => {
-    const existing = await tx.challan.findUnique({ where: { id }, include: { items: true } });
+    const existing = await tx.challan.findUnique({
+      where: { id },
+      include: { items: { orderBy: { productId: 'asc' } } },
+    });
 
     if (!existing) {
       throw new AppError(404, 'Challan not found');

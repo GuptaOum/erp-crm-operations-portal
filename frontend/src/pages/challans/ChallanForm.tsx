@@ -1,53 +1,50 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getErrorMessage } from '../../api/client';
 import { createChallan } from '../../api/challans';
 import { fetchCustomers } from '../../api/customers';
 import { fetchProducts } from '../../api/products';
+import { SearchSelect } from '../../components/SearchSelect';
 import { Customer, Product } from '../../types';
 import { formatCurrency } from '../../utils/format';
 
 interface LineItem {
-  productId: string;
+  product: Product | null;
   quantity: string;
 }
 
-const EMPTY_LINE: LineItem = { productId: '', quantity: '1' };
+const EMPTY_LINE: LineItem = { product: null, quantity: '1' };
+
+const PICKER_LIMIT = 20;
 
 export function ChallanForm() {
   const navigate = useNavigate();
 
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [customerId, setCustomerId] = useState('');
+  const [customer, setCustomer] = useState<Customer | null>(null);
   const [notes, setNotes] = useState('');
-  const [lines, setLines] = useState<LineItem[]>([EMPTY_LINE]);
-  const [loading, setLoading] = useState(true);
+  const [lines, setLines] = useState<LineItem[]>([{ ...EMPTY_LINE }]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    Promise.all([
-      fetchCustomers({ page: 1, limit: 100, status: 'ACTIVE' }),
-      fetchProducts({ page: 1, limit: 100 }),
-    ])
-      .then(([customerResult, productResult]) => {
-        setCustomers(customerResult.data);
-        setProducts(productResult.data);
-      })
-      .catch((fetchError) => setError(getErrorMessage(fetchError)))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const productById = useMemo(
-    () => new Map(products.map((product) => [product.id, product])),
-    [products],
+  const searchCustomers = useCallback(
+    (term: string) =>
+      fetchCustomers({ page: 1, limit: PICKER_LIMIT, status: 'ACTIVE', search: term || undefined })
+        .then((result) => result.data),
+    [],
   );
 
-  const total = lines.reduce((sum, line) => {
-    const product = productById.get(line.productId);
-    return product ? sum + product.unitPrice * Number(line.quantity || 0) : sum;
-  }, 0);
+  const searchProducts = useCallback(
+    (term: string) =>
+      fetchProducts({ page: 1, limit: PICKER_LIMIT, search: term || undefined }).then(
+        (result) => result.data,
+      ),
+    [],
+  );
+
+  const total = lines.reduce(
+    (sum, line) => (line.product ? sum + line.product.unitPrice * Number(line.quantity || 0) : sum),
+    0,
+  );
 
   function updateLine(index: number, changes: Partial<LineItem>) {
     setLines((current) =>
@@ -61,21 +58,26 @@ export function ChallanForm() {
 
   async function submit(confirm: boolean) {
     setError('');
-    setSubmitting(true);
 
-    const items = lines
-      .filter((line) => line.productId && Number(line.quantity) > 0)
-      .map((line) => ({ productId: line.productId, quantity: Number(line.quantity) }));
-
-    if (items.length === 0) {
-      setError('Add at least one product with a quantity');
-      setSubmitting(false);
+    if (!customer) {
+      setError('Select a customer');
       return;
     }
 
+    const items = lines
+      .filter((line) => line.product && Number(line.quantity) > 0)
+      .map((line) => ({ productId: line.product!.id, quantity: Number(line.quantity) }));
+
+    if (items.length === 0) {
+      setError('Add at least one product with a quantity');
+      return;
+    }
+
+    setSubmitting(true);
+
     try {
       const challan = await createChallan({
-        customerId,
+        customerId: customer.id,
         notes: notes || undefined,
         confirm,
         items,
@@ -91,10 +93,6 @@ export function ChallanForm() {
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
     submit(false);
-  }
-
-  if (loading) {
-    return <div className="empty">Loading customers and products</div>;
   }
 
   return (
@@ -114,19 +112,17 @@ export function ChallanForm() {
             <div className="form-grid">
               <div className="field">
                 <label htmlFor="customerId">Customer</label>
-                <select
+                <SearchSelect<Customer>
                   id="customerId"
-                  value={customerId}
-                  onChange={(event) => setCustomerId(event.target.value)}
-                  required
-                >
-                  <option value="">Select a customer</option>
-                  {customers.map((customer) => (
-                    <option key={customer.id} value={customer.id}>
-                      {customer.businessName} ({customer.name})
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Search by business, name, mobile or GST"
+                  disabled={submitting}
+                  selectedLabel={customer ? `${customer.businessName} (${customer.name})` : ''}
+                  search={searchCustomers}
+                  optionKey={(item) => item.id}
+                  optionLabel={(item) => `${item.businessName} · ${item.name} · ${item.mobile}`}
+                  onSelect={setCustomer}
+                  onClear={() => setCustomer(null)}
+                />
               </div>
               <div className="field">
                 <label htmlFor="notes">Notes</label>
@@ -154,48 +150,46 @@ export function ChallanForm() {
           </div>
           <div className="card-body">
             <div className="line-items">
-              {lines.map((line, index) => {
-                const product = productById.get(line.productId);
-
-                return (
-                  <div className="line-item" key={index}>
-                    <select
-                      value={line.productId}
-                      onChange={(event) => updateLine(index, { productId: event.target.value })}
-                    >
-                      <option value="">Select a product</option>
-                      {products.map((option) => (
-                        <option key={option.id} value={option.id}>
-                          {option.sku} · {option.name} · {option.currentStock} in stock
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      min="1"
-                      value={line.quantity}
-                      onChange={(event) => updateLine(index, { quantity: event.target.value })}
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-small"
-                      onClick={() => removeLine(index)}
-                      disabled={lines.length === 1}
-                    >
-                      X
-                    </button>
-                    {product ? (
-                      <div className="line-note muted">
-                        {formatCurrency(product.unitPrice)} each ·{' '}
-                        {formatCurrency(product.unitPrice * Number(line.quantity || 0))} line total
-                        {Number(line.quantity) > product.currentStock
-                          ? ' · quantity exceeds available stock'
-                          : ''}
-                      </div>
-                    ) : null}
-                  </div>
-                );
-              })}
+              {lines.map((line, index) => (
+                <div className="line-item" key={index}>
+                  <SearchSelect<Product>
+                    placeholder="Search by SKU or name"
+                    disabled={submitting}
+                    selectedLabel={line.product ? `${line.product.sku} · ${line.product.name}` : ''}
+                    search={searchProducts}
+                    optionKey={(item) => item.id}
+                    optionLabel={(item) =>
+                      `${item.sku} · ${item.name} · ${item.currentStock} in stock`
+                    }
+                    onSelect={(product) => updateLine(index, { product })}
+                    onClear={() => updateLine(index, { product: null })}
+                  />
+                  <input
+                    type="number"
+                    min="1"
+                    value={line.quantity}
+                    onChange={(event) => updateLine(index, { quantity: event.target.value })}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-small"
+                    onClick={() => removeLine(index)}
+                    disabled={lines.length === 1}
+                  >
+                    X
+                  </button>
+                  {line.product ? (
+                    <div className="line-note muted">
+                      {formatCurrency(line.product.unitPrice)} each ·{' '}
+                      {formatCurrency(line.product.unitPrice * Number(line.quantity || 0))} line
+                      total
+                      {Number(line.quantity) > line.product.currentStock
+                        ? ' · quantity exceeds available stock'
+                        : ''}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
             </div>
 
             <div className="challan-total">
@@ -209,12 +203,7 @@ export function ChallanForm() {
           <button type="submit" className="btn btn-secondary" disabled={submitting}>
             Save as draft
           </button>
-          <button
-            type="button"
-            className="btn"
-            disabled={submitting}
-            onClick={() => submit(true)}
-          >
+          <button type="button" className="btn" disabled={submitting} onClick={() => submit(true)}>
             Save and confirm
           </button>
           <button type="button" className="btn btn-secondary" onClick={() => navigate('/challans')}>

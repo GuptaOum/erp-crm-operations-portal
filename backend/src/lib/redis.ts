@@ -31,6 +31,36 @@ export function getClient(): Redis | null {
   return client;
 }
 
+export async function cacheGetJson<T>(key: string): Promise<T | null> {
+  const redis = getClient();
+
+  if (!redis) {
+    return null;
+  }
+
+  try {
+    const value = await redis.get(key);
+    return value ? (JSON.parse(value) as T) : null;
+  } catch (error) {
+    report(error);
+    return null;
+  }
+}
+
+export async function cacheSetJson(key: string, value: unknown, ttlSeconds: number) {
+  const redis = getClient();
+
+  if (!redis) {
+    return;
+  }
+
+  try {
+    await redis.set(key, JSON.stringify(value), 'EX', ttlSeconds);
+  } catch (error) {
+    report(error);
+  }
+}
+
 export async function cacheFlush() {
   const redis = getClient();
 

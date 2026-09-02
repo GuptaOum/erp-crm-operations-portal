@@ -180,9 +180,26 @@ immediately, and a role change applies on their very next request. A cache with 
 that, and only invalidating writes made through this API would still miss a change made directly in
 the database. The guarantee is worth more than the milliseconds, so the query stays.
 
-Redis is optional. With `REDIS_URL` unset the limiter counts per process, which is how the free tier
-deployment runs. If Redis is configured but unreachable the limiter fails open and logs once rather
-than answering 500.
+The dashboard summary has an opt-in cache for the same reason reversed: at a few dozen staff it is
+not worth it, so `DASHBOARD_CACHE_SECONDS` defaults to `0` and the aggregates run per request. At a
+thousand staff those aggregates are the heaviest repeated read in the system, so stage 3 sets it to
+30 seconds. It is a plain time to live with no invalidation, which is the right trade for counters
+that are already a snapshot.
+
+Redis is optional. With `REDIS_URL` unset the limiter counts per process and the dashboard cache
+cannot engage, which is how the free tier deployment runs. If Redis is configured but unreachable
+the limiter fails open and logs once rather than answering 500.
+
+### Where this stops scaling
+
+| Users | What it needs |
+| --- | --- |
+| 50 staff, 1,000 customers | What is deployed today, on the free tier |
+| 1,000 staff, 10,000 customers | Stage 3 with the dashboard cache on, the Auto Scaling group allowed to reach 8 instances, and a larger database class: `-var db_instance_class=db.t4g.medium -var asg_min_size=3` |
+| Beyond that | A read replica for list queries, a trigram index for search, and PDF rendering moved off the request path |
+
+The first thing to break is not throughput, it is the database class: `db.t3.micro` is burstable and
+throttles under sustained load long before the application instances are busy.
 
 ## Modules
 
@@ -192,7 +209,7 @@ than answering 500.
 | Users | Staff list, create, edit, reset password | admin only; an admin cannot demote or deactivate themselves |
 | Customers | List, detail, follow up queue | `mobile` is unique and a duplicate answers 409; notes are dated and append only |
 | Products | Catalogue, stock movement log | stock is read only on the product form; every change writes a movement row |
-| Challans | List, builder, PDF | confirm deducts stock, cancel returns it, numbers come from a sequence table |
+| Challans | List, builder, PDF | confirm deducts stock, cancel returns it, numbers come from a sequence table; the builder searches customers and products server side rather than loading them into a select |
 
 ### Data model
 
@@ -231,6 +248,11 @@ WHERE id = $id AND current_stock >= $qty
 Zero rows affected means the stock was insufficient, and the whole transaction rolls back with a
 400 naming the SKU, the available quantity and the required quantity. The condition sits in the
 `WHERE`, so two users confirming at the same moment cannot both pass a read-then-write check.
+
+The `UPDATE` itself takes the row lock and holds it until commit, which is what serialises two
+people selling the same product. Lines are read in `productId` order so that every transaction
+acquires those locks in the same sequence: two challans sharing products then queue behind each
+other instead of deadlocking.
 
 ## Running locally
 
@@ -483,7 +505,7 @@ including TLS, stage transitions and the teardown checklist, is in [DEPLOYMENT.m
 | Proxy pinning | RDS Proxy multiplexes best on simple queries. Prisma uses prepared statements, which pin a session to a connection for its lifetime, so the proxy gives connection reuse and failover survival here rather than full multiplexing |
 | Redis is best effort | If Redis is unreachable the login limiter fails **open**, allowing the request and logging once rather than answering 500. That is a deliberate availability choice on an internal portal; a public signup form would be a good argument for failing closed instead |
 | Onboarding | Admin sets the password and tells the user; the portal sends no mail |
-| Select lists | The challan form loads up to 100 customers and products rather than paging; fine at this volume, not at 10,000 products |
+| Search quality | Customer and product search is `ILIKE` on a handful of columns. Fine into the tens of thousands of rows; past that it wants a trigram index or full text search |
 | NAT cost | Two NAT gateways, one per zone, so losing a zone does not cut outbound internet for the survivor. They are the largest hourly line item at roughly 0.11 USD an hour combined, which is why the stack is destroyed between demonstrations |
 | Image reaping | Replacing an image leaves the old object. Bucket versioning is on, so nothing is lost and nothing is cleaned up |
 | Deregistration | Hard terminating an instance costs a few requests, because the health check runs every 30s. A lifecycle hook would close that window |

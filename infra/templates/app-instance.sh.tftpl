@@ -36,4 +36,5 @@ docker run -d \
   -e JWT_SECRET="$JWT_SECRET" \
   -e S3_IMAGE_BUCKET="$S3_IMAGE_BUCKET" \
   -e REDIS_URL="$REDIS_URL" \
+  -e DASHBOARD_CACHE_SECONDS=30 \
   "$IMAGE"

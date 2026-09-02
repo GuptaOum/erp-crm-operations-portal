@@ -89,7 +89,7 @@ variable "asg_min_size" {
 variable "asg_max_size" {
   description = "Maximum number of application instances at stage 3"
   type        = number
-  default     = 4
+  default     = 8
 }
 
 variable "create_github_oidc_provider" {

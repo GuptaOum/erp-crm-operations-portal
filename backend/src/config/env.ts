@@ -20,6 +20,7 @@ export const env = {
   awsRegion: process.env.AWS_REGION ?? 'ap-south-1',
   s3ImageBucket: process.env.S3_IMAGE_BUCKET ?? '',
   redisUrl: process.env.REDIS_URL ?? '',
+  dashboardCacheSeconds: Number(process.env.DASHBOARD_CACHE_SECONDS ?? 0),
   company: {
     name: process.env.COMPANY_NAME ?? 'Shree Distributors',
     address: process.env.COMPANY_ADDRESS ?? 'Plot 42, MIDC Bhosari, Pune 411026',
