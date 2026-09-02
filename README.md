@@ -8,16 +8,27 @@ out of the warehouse.
 
 | | |
 | --- | --- |
-| Portal | https://d3q25lsoez0ee9.cloudfront.net |
-| API | https://d3q25lsoez0ee9.cloudfront.net/api |
-| Stage | 3, CloudFront and S3 in front, Auto Scaling group behind an ALB, RDS Multi-AZ |
-| Region | ap-south-1 across two availability zones |
+| Portal | https://erp-portal-web.onrender.com |
+| API | https://erp-portal-api.onrender.com/api |
+| Hosting | Render static site and web service, defined in [`render.yaml`](render.yaml) |
+| Database | Supabase PostgreSQL 17, application tables in the `erp_portal` schema |
 
 Sign in with any account from [Test accounts](#test-accounts); all use the password `Portal@2026`.
 
-The environment is destroyed between demonstrations to avoid running cost, so if the link is not
-answering it can be rebuilt with `./scripts/up.sh 3`. Both resilience claims have been exercised
-rather than assumed:
+The API runs on Render's free instance type, which sleeps after about fifteen minutes without
+traffic. The first request after a sleep wakes it and can take up to a minute; every request after
+that is normal. Load the portal once and give it a moment before judging it.
+
+### The AWS build is also included
+
+The free hosting above is what is live right now, because the assignment does not require paid
+infrastructure. The repository also carries a complete Terraform build for AWS in [`infra/`](infra),
+described under [Architecture](#architecture), which provisions a VPC across two availability zones,
+an Auto Scaling group behind an Application Load Balancer, RDS Multi-AZ and CloudFront. It is
+destroyed between demonstrations to avoid running cost and can be raised with `./scripts/up.sh 3`.
+Every rebuild issues a new CloudFront domain, so no AWS URL is quoted here.
+
+Both resilience claims on that build were exercised rather than assumed:
 
 - **Database failover.** `reboot-db-instance --force-failover` moved the primary from `ap-south-1b`
   to `ap-south-1a`. The API recovered on its own after roughly twenty five seconds with no restart.
@@ -432,6 +443,35 @@ Stock is never editable directly on the product form. Every change is a stock mo
 is the authoritative history rather than a side effect.
 
 ## Deployment
+
+### Render and Supabase, the live deployment
+
+[`render.yaml`](render.yaml) at the repository root declares both services, so the whole environment
+is created from one blueprint rather than by filling in dashboard forms.
+
+| Service | Type | Build | Start |
+| --- | --- | --- | --- |
+| `erp-portal-api` | Node web service | `npm install --include=dev && npm run build` | `npx prisma migrate deploy && npm start` |
+| `erp-portal-web` | Static site | `npm install && npm run build`, published from `dist` | served by Render's CDN |
+
+Migrations run on every start, so a deploy brings the schema forward on its own. Four values are
+supplied in the dashboard rather than committed: `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN` and
+`VITE_API_URL`. They are marked `sync: false` in the blueprint, which is what keeps secrets out of
+the repository.
+
+Two details worth knowing:
+
+- The build installs dev dependencies explicitly. `NODE_ENV` is `production` on the service, which
+  makes npm omit them, and the TypeScript compiler, the type packages and the Prisma CLI all live
+  there.
+- `npm install` is used rather than `npm ci`. The test tooling resolves two incompatible ranges for
+  one transitive package, which `npm ci` refuses outright.
+
+The database is Supabase. The application owns the `erp_portal` schema rather than `public`, set
+with `?schema=erp_portal` on the connection string, so nothing collides with Supabase's own objects.
+Use the session mode pooler on port 5432: the transaction pooler on 6543 cannot run migrations.
+
+### AWS, the optional build
 
 Infrastructure is Terraform in [`infra/`](infra), deployed to `ap-south-1`. Full runbook,
 including TLS, stage transitions and the teardown checklist, is in [DEPLOYMENT.md](DEPLOYMENT.md).
