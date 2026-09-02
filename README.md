@@ -79,6 +79,26 @@ frontend (React)  ->  /api  ->  Express router
 The infrastructure is deliberately built in three stages so the growth path is visible rather than
 assumed. A single `stage` variable in Terraform moves between them.
 
+### Stage 0, the development loop
+
+Before any of it is on AWS, this is how the pieces talk on one machine.
+
+```mermaid
+flowchart LR
+  dev([Developer])
+  browser["Browser, :5173<br/>Vite dev server"]
+  api["Express API, :4000<br/>npm run dev"]
+  db[("PostgreSQL, :5432<br/>Docker Compose")]
+  tests["Vitest and Supertest"]
+
+  dev --> browser
+  browser -->|"proxy /api, no CORS"| api
+  api -->|"Prisma client"| db
+  api -->|"migrate deploy, seed"| db
+  tests -->|"HTTP through the app"| api
+  tests -->|"truncate between tests"| db
+```
+
 ### Stage 1, single server
 
 ```mermaid

@@ -1,120 +1,104 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 820" width="1180" height="820" font-family="Segoe UI, Helvetica, Arial, sans-serif">
-  <rect width="1180" height="820" fill="#ffffff"/>
-
-  <text x="24" y="30" font-size="15" fill="#16191f">The final state of the infrastructure is:</text>
-
-  <g>
-    <circle cx="70" cy="86" r="14" fill="none" stroke="#5a6b7b" stroke-width="1.5"/>
-    <text x="50" y="118" font-size="12" fill="#16191f">Internet</text>
-    <rect x="150" y="66" width="160" height="40" rx="4" fill="#ffffff" stroke="#5a6b7b" stroke-width="1.5"/>
-    <text x="162" y="82" font-size="11.5" fill="#16191f">GitHub Actions</text>
-    <text x="162" y="97" font-size="10.5" fill="#5a6b7b">OIDC, no stored keys</text>
-  </g>
-
-  <rect x="24" y="140" width="1132" height="600" fill="none" stroke="#232f3e" stroke-width="1.5"/>
-  <rect x="24" y="140" width="30" height="26" fill="#232f3e"/>
-  <text x="62" y="158" font-size="13" font-weight="600" fill="#16191f">AWS Cloud</text>
-
-  <rect x="44" y="178" width="1092" height="544" fill="none" stroke="#147eba" stroke-width="1.3" stroke-dasharray="5 4"/>
-  <text x="76" y="197" font-size="12.5" font-weight="600" fill="#147eba">Region ap-south-1</text>
-
-  <rect x="820" y="212" width="140" height="46" rx="4" fill="#ffffff" stroke="#8c4fff" stroke-width="1.5"/>
-  <text x="832" y="232" font-size="11.5" fill="#16191f">CloudFront</text>
-  <text x="832" y="247" font-size="10.5" fill="#5a6b7b">site and /api behaviours</text>
-
-  <rect x="985" y="212" width="130" height="46" rx="4" fill="#ffffff" stroke="#7aa116" stroke-width="1.5"/>
-  <text x="997" y="232" font-size="11.5" fill="#16191f">S3</text>
-  <text x="997" y="247" font-size="10.5" fill="#5a6b7b">React build</text>
-
-  <rect x="985" y="272" width="130" height="46" rx="4" fill="#ffffff" stroke="#ed7100" stroke-width="1.5"/>
-  <text x="997" y="292" font-size="11.5" fill="#16191f">ECR</text>
-  <text x="997" y="307" font-size="10.5" fill="#5a6b7b">API image</text>
-
-  <rect x="64" y="226" width="740" height="478" fill="none" stroke="#7aa116" stroke-width="1.5"/>
-  <text x="96" y="245" font-size="12.5" font-weight="600" fill="#248814">VPC 10.0.0.0/16</text>
-
-  <rect x="86" y="262" width="300" height="424" fill="none" stroke="#00a4a6" stroke-width="1.2" stroke-dasharray="5 4"/>
-  <text x="150" y="282" font-size="12" font-weight="600" fill="#00a4a6">Availability Zone A</text>
-  <rect x="484" y="262" width="300" height="424" fill="none" stroke="#00a4a6" stroke-width="1.2" stroke-dasharray="5 4"/>
-  <text x="548" y="282" font-size="12" font-weight="600" fill="#00a4a6">Availability Zone B</text>
-
-  <rect x="102" y="296" width="268" height="90" fill="#f2f8ee" stroke="#7aa116" stroke-width="1.2"/>
-  <text x="114" y="314" font-size="11.5" font-weight="600" fill="#248814">Public subnet 1: 10.0.0.0/24</text>
-  <rect x="150" y="326" width="172" height="44" rx="4" fill="#ffffff" stroke="#8c4fff" stroke-width="1.4"/>
-  <text x="196" y="353" font-size="11.5" fill="#16191f">NAT gateway</text>
-
-  <rect x="500" y="296" width="268" height="90" fill="#f2f8ee" stroke="#7aa116" stroke-width="1.2"/>
-  <text x="512" y="314" font-size="11.5" font-weight="600" fill="#248814">Public subnet 2: 10.0.2.0/24</text>
-  <rect x="548" y="326" width="172" height="44" rx="4" fill="#ffffff" stroke="#8c4fff" stroke-width="1.4"/>
-  <text x="604" y="353" font-size="11.5" fill="#16191f">ALB node</text>
-
-  <rect x="102" y="404" width="268" height="266" fill="#eff5fb" stroke="#147eba" stroke-width="1.2"/>
-  <text x="114" y="422" font-size="11.5" font-weight="600" fill="#147eba">Private subnet 1: 10.0.1.0/24</text>
-  <rect x="500" y="404" width="268" height="266" fill="#eff5fb" stroke="#147eba" stroke-width="1.2"/>
-  <text x="512" y="422" font-size="11.5" font-weight="600" fill="#147eba">Private subnet 2: 10.0.3.0/24</text>
-
-  <rect x="120" y="436" width="232" height="86" fill="none" stroke="#d13212" stroke-width="1.3" stroke-dasharray="4 3"/>
-  <text x="130" y="453" font-size="11" fill="#d13212">Security group</text>
-  <rect x="150" y="462" width="176" height="46" rx="4" fill="#ffffff" stroke="#ed7100" stroke-width="1.4"/>
-  <text x="162" y="481" font-size="11.5" fill="#16191f">App instance, t3.small</text>
-  <text x="162" y="497" font-size="10.5" fill="#5a6b7b">port 4000, from the ALB only</text>
-
-  <rect x="518" y="436" width="232" height="86" fill="none" stroke="#d13212" stroke-width="1.3" stroke-dasharray="4 3"/>
-  <text x="528" y="453" font-size="11" fill="#d13212">Security group</text>
-  <rect x="548" y="462" width="176" height="46" rx="4" fill="#ffffff" stroke="#ed7100" stroke-width="1.4"/>
-  <text x="560" y="481" font-size="11.5" fill="#16191f">App instance, t3.small</text>
-  <text x="560" y="497" font-size="10.5" fill="#5a6b7b">port 4000, from the ALB only</text>
-
-  <rect x="120" y="556" width="232" height="92" fill="none" stroke="#d13212" stroke-width="1.3" stroke-dasharray="4 3"/>
-  <text x="130" y="573" font-size="11" fill="#d13212">Security group</text>
-  <rect x="150" y="582" width="176" height="50" rx="4" fill="#ffffff" stroke="#147eba" stroke-width="1.4"/>
-  <text x="162" y="602" font-size="11.5" fill="#16191f">RDS primary</text>
-  <text x="162" y="619" font-size="10.5" fill="#5a6b7b">PostgreSQL 17, 5432 from app</text>
-
-  <rect x="518" y="556" width="232" height="92" fill="none" stroke="#d13212" stroke-width="1.3" stroke-dasharray="4 3"/>
-  <text x="528" y="573" font-size="11" fill="#d13212">Security group</text>
-  <rect x="548" y="582" width="176" height="50" rx="4" fill="#ffffff" stroke="#147eba" stroke-width="1.4"/>
-  <text x="560" y="602" font-size="11.5" fill="#16191f">RDS standby</text>
-  <text x="560" y="619" font-size="10.5" fill="#5a6b7b">Multi-AZ failover target</text>
-
-  <rect x="398" y="292" width="72" height="64" rx="4" fill="#ffffff" stroke="#8c4fff" stroke-width="1.4"/>
-  <text x="406" y="318" font-size="10.5" fill="#16191f">Internet</text>
-  <text x="406" y="333" font-size="10.5" fill="#16191f">gateway</text>
-
-  <rect x="386" y="382" width="96" height="92" fill="none" stroke="#d13212" stroke-width="1.3" stroke-dasharray="4 3"/>
-  <text x="392" y="398" font-size="10.5" fill="#d13212">Security group</text>
-  <rect x="396" y="406" width="76" height="58" rx="4" fill="#ffffff" stroke="#8c4fff" stroke-width="1.4"/>
-  <text x="404" y="426" font-size="10.5" fill="#16191f">Application</text>
-  <text x="404" y="440" font-size="10.5" fill="#16191f">Load</text>
-  <text x="404" y="454" font-size="10.5" fill="#16191f">Balancer</text>
-
-  <rect x="376" y="492" width="116" height="54" fill="none" stroke="#ed7100" stroke-width="1.3" stroke-dasharray="4 3"/>
-  <text x="392" y="514" font-size="11" font-weight="600" fill="#ed7100">Auto Scaling</text>
-  <text x="412" y="531" font-size="11" font-weight="600" fill="#ed7100">group</text>
-
-  <g stroke="#5a6b7b" stroke-width="1.2" fill="none">
-    <path d="M70 100 L70 324 L398 324"/>
-    <path d="M434 356 L434 382"/>
-    <path d="M386 434 L326 470"/>
-    <path d="M482 434 L548 470"/>
-    <path d="M238 508 L238 556"/>
-    <path d="M636 508 L636 556"/>
-    <path d="M326 606 L548 606" stroke-dasharray="4 3"/>
-    <path d="M322 348 L398 330"/>
-    <path d="M310 80 L890 80 L890 212"/>
-    <path d="M890 234 L985 234" stroke-dasharray="4 3"/>
-    <path d="M310 96 L1050 96 L1050 272" stroke-dasharray="4 3"/>
-    <path d="M352 470 L1050 470 L1050 318" stroke-dasharray="4 3"/>
-    <path d="M820 240 L500 412" stroke-dasharray="4 3"/>
-  </g>
-
-  <text x="372" y="602" font-size="10" fill="#5a6b7b">synchronous replication</text>
-  <text x="905" y="228" font-size="10" fill="#5a6b7b">sync build</text>
-  <text x="905" y="462" font-size="10" fill="#5a6b7b">pull image</text>
-  <text x="506" y="404" font-size="10" fill="#5a6b7b">/api/*</text>
-  <text x="700" y="76" font-size="10" fill="#5a6b7b">default /*</text>
-
-  <rect x="24" y="756" width="1132" height="48" rx="4" fill="#f7f8fa" stroke="#d5dbdb"/>
-  <text x="40" y="776" font-size="11.5" fill="#16191f">Every resource above is declared as Terraform in infra/ and applied to ap-south-1. A single stage variable moves between the three builds:</text>
-  <text x="40" y="793" font-size="11.5" fill="#16191f">stage 1 a single EC2 instance, stage 2 RDS Multi-AZ, stage 3 the diagram above. terraform apply raises it and terraform destroy removes it, so nothing runs between demonstrations.</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 740" width="1180" height="740" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+<rect width="1180" height="740" fill="#ffffff"/>
+<circle cx="530" cy="34" r="15" fill="#ffffff" stroke="#5a6b7b" stroke-width="1.5"/>
+<text x="552" y="39" font-size="12" fill="#16191f">Internet</text>
+<rect x="900" y="18" width="200" height="42" rx="4" fill="#ffffff" stroke="#5a6b7b" stroke-width="1.4"/>
+<text x="914" y="36" font-size="11.5" fill="#16191f">GitHub Actions</text>
+<text x="914" y="51" font-size="10.5" fill="#5a6b7b">OIDC, no stored AWS keys</text>
+<rect x="30" y="76" width="1120" height="624" fill="none" stroke="#232f3e" stroke-width="1.6"/>
+<image x="32" y="78" width="34" height="30" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACEAAAAcCAYAAADvANYcAAAC3UlEQVR4nNWWa0hTYRjH/+c4z26W8zJN1Nk2J15qXrAkaIiZWikoiRVBQURfgqAPQd/6FEQQSBAIfYkKpauVRURUdIGuFOZlN7fM0rm56azN3c9Z7ICQzXA3cv3gfDjnPbzvn+d9nuf/EPJKVRAgsJqQSAJIJAEkkgASSQCJJIBEEsCJ5meCIMDncSFKXxt6g9vjgcPpRCBA/xsRaUIhamuUKFXIwONxQdMMGIbBrN2O9x8/Y+LbJPstFohImpU4OxPtrc0oyFsHjd6I71Mm0DTNRkQuK0JujhiPn77E2w+fYhKyYiSEQgFaWxqRlZmBvlv3YByfWHLQmndC1NVWY39XO+bs89DoDIkXIZUUQC6VoO/mAMaMXxEMBpesO5wLeP7qDQQCHo4fPYyz3T3Y1dIAq20Oz168htU2G191cLkUKjeWwzJjg05vCBOwSICmMfDwCfh8Hq5c7IbT6UKxrAgnjh2BpDA/vkhQFIUccRa0eiOYvwj4nZOnzoChGVisNqRyODh0YA821ShhtszA5/NHHwkul4KyohR5uTkwTVsQCdPmGVZACH8ggKERDRSy9VBt2QyRKFTWUUSCz+Nhb2cbFHIphtVaTJrMiAW94QtyxdmoKFOgSlmO6/0PMDk1HVmJ7thej872nTjfcwlavSHuZpQhSmf3LC2R4/S5C/D/cTXLXkdXRyuuXruDEbUubgEh7PM/0H//ETxeLyorysLWw0QIBXw2GQeH1EgkXq8Po5oxlBRLI8kJgn1IMvEj39o0IYhl9g2LxILLhVGtDh1tzSDJxJmsQMBHddUG6A3jK4sIcbn3NpoaVGhprEdmhggpcYgJ9YvC/Dwc3LcbbrcHg8PqyA2sfmsdmrap4PcFWMv2eDwxieBSFDgcDpvgvTfuwmS2ROeiksJ81jtCbklRqTGJcLk9MFusrO/8dDhit/KUFDLm/FicO+IeamiaiXlg+W9mTHK1BYTO/wWKSQ8l3WY22QAAAABJRU5ErkJggg=="/>
+<text x="76" y="98" font-size="13.5" font-weight="600" fill="#16191f">AWS Cloud</text>
+<rect x="60" y="118" width="1060" height="562" fill="none" stroke="#147eba" stroke-width="1.3" stroke-dasharray="5 4"/>
+<image x="62" y="120" width="30" height="28" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACIAAAAgCAYAAAB3j6rJAAAB+UlEQVR4nO2XTUsbURSG3/lKJtHE1ASTNLEbv2pQCNTWjQtRaDftonYt6k/oqjv9C+4Ed4KgUhddiuBGBN00JoRCRdqQghnbxIZOTDqZZNKS6y5Cc8RJYiUPzGIuXHg455537nCexd0/aCGRtxPoddnA447A438Q4QB02yWM+BzoksXWiXRYBMw+CeDdVB9mRv3svSUiAs/B75Thd1rZIwmN6+Q/6/1LK2MrmoJLlrDzOQ1VK4Gv9uuGVAhzWbfxxXIFWtlAOOBgVaFS9eV5Dt9zRcRSKrRy5XYiVbrtFow/esAqRJUIumT0uzuwevQNcSVXdw9J5CSdx8bxGb5eFEgibruEhWe9rBIfPp2jUDLq7jH99EkCh5chL3wOK97HFKQvddI+00XCD514FfJiPXKGxE9aBRsicp7TWd547BbStDRMJKVqWDlMYnYsiOGeTnDEcRepfXfZJBb3FKIplX0W5p8GsbyfgJIrmiMS6JIxM+rDRaEEKg6riMc9nZge8GA7rkArmZAjBd1AMvubhROVL5k8DpPZq6kxI1mr/LjUsXeaIefI/b2PNJO2SC3titTSrgg50F4MebD0fBAiz8EmCXg94oVuVPBm7SMUlZ6wtxY5SGQxtxm7tp4hXnRME8nrBk7TeTSL9mGtRZzsc19bbCayePUb+xeejJewcxrWEwAAAABJRU5ErkJggg=="/>
+<text x="100" y="139" font-size="12.5" font-weight="600" fill="#147eba">Region ap-south-1</text>
+<rect x="450" y="164" width="160" height="46" rx="4" fill="#ffffff" stroke="#8c4fff" stroke-width="1.4"/>
+<text x="462" y="183" font-size="11.5" fill="#16191f">CloudFront</text>
+<text x="462" y="199" font-size="10.5" fill="#5a6b7b">/api to ALB, rest to S3</text>
+<rect x="650" y="164" width="140" height="46" rx="4" fill="#ffffff" stroke="#7aa116" stroke-width="1.4"/>
+<text x="662" y="183" font-size="11.5" fill="#16191f">S3</text>
+<text x="662" y="199" font-size="10.5" fill="#5a6b7b">React build</text>
+<rect x="830" y="164" width="140" height="46" rx="4" fill="#ffffff" stroke="#ed7100" stroke-width="1.4"/>
+<text x="842" y="183" font-size="11.5" fill="#16191f">ECR</text>
+<text x="842" y="199" font-size="10.5" fill="#5a6b7b">API image</text>
+<rect x="150" y="240" width="750" height="420" fill="none" stroke="#7aa116" stroke-width="1.5"/>
+<image x="152" y="242" width="32" height="32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACMAAAAjCAYAAAAe2bNZAAAD9UlEQVR4nOWWbWxTVRjH//dy264v24BOZje6sWySSWfHMkbnNohKiJkSRSYhcxA0QUwIYPyg0fiBGF+iCYnGmKiJJibODwjJGMEQHMkqBmWLZS8MN9oVWlbWwrq+rO2626695pxFWO3WtcTZm/hvmtyc89x7fvec//M8l3n2O4OALErALATMIXDXXaPZZMFXLe14vHTLHMzcEJM1GNmKHCgkSnrNQkRiISKxEJFYiEgsRCQuk2CG/Jj7mScIpEII/y2MXCJH2eoK6DU12KxthEqmQpAP4Df7RQy5BnDTMwp+ll9+GJU0Fzs27IKhpAFjPjs6r53E+JQDmrxi1Jc0oansCXSPdsFo7YJ/xre8MM2Vz6FOW49207fod5oQi8fouMU9gks2I3SF1ditb6OF68yfpxCKBJcHRruyFC9U7cHH3ccw6OxLmidgV119kLAc9tUewJjfjkKVBpq8IpgcPTA5ehGJ8f9ONu3W78WAs4/6YjEREw+6+mB2j+Bo45vQFT6GUCSE1o0vo0XfCo5NP0dSRjas24pPuo8hLsST5hRSJUpWluFOYBzesAcn+r9Hj/0SzO5hamayM201r2D4zlX0j5seHIZlWCgkCrqYwzeWNE/M2956Gr6wFyE+gOMXP8Sg8wompyfuxZAMI77SFephnhhBeDYMYYGXSlj3nwM5XA7dkY+aP8OQqx+T0+7EHZEoqGH/cPTgUMd+mt5Plm+HjMtJ6P7haBg27w1se6QZ7257H7XFm+lLpg3DMCwMpU3YqduDC5ZzeO1UW5IBn6nciZqiOgrVUtVK609NcR0aSrdAxsnuxc3Go/QZr3ceoMf0quEwKtfo0odRKwpg0DbCaP0Z566fQTQeTbrhqYqnqR/Om8/ilt+GX23dsHmsqNbUQs7Jk+ID/BRODv4Ao/UCjja+lb5nNLlFkHJSWD0WRGPJIH+LHM2V2733BwSgOH9tyoV+Gu7AG1vfhlKqpNm2JAzxC4EIR8MpH1y5ZkNCjypbXb6kOad4P4J8ELmy/PRggpEA8mT5UMvVsMG64A0DThN2PLoLz+tWzBtl0HntR/ApChxpKwXKh+Cf8S4akwBj99owEbqLTdp6WCbNmFqg13x9+XP6z0TE2Ps3HaRHlWrXE2CmoyF0DJ3AQcMRvKh/Caaxy7SgRWMRPIhIKufLV6F2rQFVD1fjva53Mit6du8NfNP7BU1hUtJ9M54lPZQKRiXLpR45/ssHcAVuZwZDdNNjxZe/f4py9Xqa7pn0l/mKCTG4Q3dxy2dL63tn0VXiQpyWcwv+p9/ALEQkFiISCxGJhYjEQkRijNYugTSvbKmiYD3thxTGM+0WVsnVWYOZr78A5k6MIGEHbeIAAAAASUVORK5CYII="/>
+<text x="192" y="264" font-size="12.5" font-weight="600" fill="#248814">VPC 10.0.0.0/16</text>
+<rect x="170" y="284" width="280" height="356" fill="none" stroke="#00a4a6" stroke-width="1.2" stroke-dasharray="5 4"/>
+<text x="310" y="304" font-size="12" font-weight="600" fill="#00a4a6" text-anchor="middle">Availability Zone A</text>
+<rect x="610" y="284" width="280" height="356" fill="none" stroke="#00a4a6" stroke-width="1.2" stroke-dasharray="5 4"/>
+<text x="750" y="304" font-size="12" font-weight="600" fill="#00a4a6" text-anchor="middle">Availability Zone B</text>
+<rect x="186" y="318" width="248" height="86" fill="#f2f8ee" stroke="#7aa116" stroke-width="1.2"/>
+<image x="190" y="322" width="22" height="22" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABcAAAAXCAYAAADgKtSgAAACCUlEQVR4nNWU30uTURjHv+d5fzjbm3OZq2isNXG4InoJg4KgIEJKb7wJiwqhP8TLoMuuFAKJ6iq6kyAEk2YlSAq76EIz9zorEZfvNiftXcc3zrkwYgvdehf0XJ1znnM+5znf58th1sYnd3RmGI0I9XMug8ezDxsCp4ZQ/3u4Wu9BBgZV0aArupyXeRkOL/09XCUVsbZOJNpPosUXgAsXRaeIZTuN1Nc5lLlTvyzd4XMYOH0bkWAUBaeA/PccDH0/bpiD6Ev077ym5spDxiHcOnMXYx+eI5meRNHZ3MmlVudw0xzEenENyaVXtcN74n34mJ3HxOJ4hcapL7Pwa35ciV/DTOZd7bKYR7sxbSUrwCKE9kJ30dy2fe21w0PGYWw6+T/m+TYH3/6BZq15b7IQIzD2qw5iChSqflQhBYwxECm7w3WlCaeOmIi0RuG6rtT0QvQSYgc6q+4X1gwHjuFi7PLucJ/mkxuFvayNJTxLPZXr4tnVQnj8TXpSjvcki8MdvE2/xvTyFP7Z30KMEPC14qA/JPvg2d+ikYbeRD8GzDvw6wbGF17gwdT93y+vFx4JRtEVOoF7E0O4/uQqzobP43iwwxs4YyTdQ0QwmlqQL9my+Z7IslZYRca20BPvBXc5VuwMFrML3lSeL+Xwcn5MOkkjHY/ej8ixJ5WLyG6tY8W2hEb4tpWtyP8EECOsj1cRGdkAAAAASUVORK5CYII="/>
+<text x="218" y="333" font-size="11" font-weight="600" fill="#248814">Public subnet 1:</text>
+<text x="218" y="347" font-size="11" font-weight="600" fill="#248814">10.0.0.0/24</text>
+<image x="294" y="352" width="32" height="32" href="data:image/png;base64,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"/>
+<text x="310" y="396" font-size="11" fill="#16191f" text-anchor="middle">NAT gateway</text>
+<rect x="626" y="318" width="248" height="86" fill="#f2f8ee" stroke="#7aa116" stroke-width="1.2"/>
+<image x="630" y="322" width="22" height="22" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABcAAAAXCAYAAADgKtSgAAACCUlEQVR4nNWU30uTURjHv+d5fzjbm3OZq2isNXG4InoJg4KgIEJKb7wJiwqhP8TLoMuuFAKJ6iq6kyAEk2YlSAq76EIz9zorEZfvNiftXcc3zrkwYgvdehf0XJ1znnM+5znf58th1sYnd3RmGI0I9XMug8ezDxsCp4ZQ/3u4Wu9BBgZV0aArupyXeRkOL/09XCUVsbZOJNpPosUXgAsXRaeIZTuN1Nc5lLlTvyzd4XMYOH0bkWAUBaeA/PccDH0/bpiD6Ev077ym5spDxiHcOnMXYx+eI5meRNHZ3MmlVudw0xzEenENyaVXtcN74n34mJ3HxOJ4hcapL7Pwa35ciV/DTOZd7bKYR7sxbSUrwCKE9kJ30dy2fe21w0PGYWw6+T/m+TYH3/6BZq15b7IQIzD2qw5iChSqflQhBYwxECm7w3WlCaeOmIi0RuG6rtT0QvQSYgc6q+4X1gwHjuFi7PLucJ/mkxuFvayNJTxLPZXr4tnVQnj8TXpSjvcki8MdvE2/xvTyFP7Z30KMEPC14qA/JPvg2d+ikYbeRD8GzDvw6wbGF17gwdT93y+vFx4JRtEVOoF7E0O4/uQqzobP43iwwxs4YyTdQ0QwmlqQL9my+Z7IslZYRca20BPvBXc5VuwMFrML3lSeL+Xwcn5MOkkjHY/ej8ixJ5WLyG6tY8W2hEb4tpWtyP8EECOsj1cRGdkAAAAASUVORK5CYII="/>
+<text x="658" y="333" font-size="11" font-weight="600" fill="#248814">Public subnet 2:</text>
+<text x="658" y="347" font-size="11" font-weight="600" fill="#248814">10.0.2.0/24</text>
+<text x="750" y="384" font-size="11" fill="#5a6b7b" text-anchor="middle">load balancer node</text>
+<rect x="186" y="424" width="248" height="200" fill="#eff5fb" stroke="#147eba" stroke-width="1.2"/>
+<image x="190" y="428" width="22" height="22" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABcAAAAYCAYAAAARfGZ1AAAB/klEQVR4nNWWTWsTURSGn3tnJmmSJmmatmkqQYptKbZEKHahuBJUEEHiSvwBbvwL+g90I+2qLqrizq1QwYUfLZTS4EKRFmlrNIHakiaxzUczmYxkQEGStkmcCr5wucw95z68M3MO94o362kzNhvnOCQ5RqntbvR3aNyaGCA23o9bk7xe2+Hu3OrfOx/p8TB7M8pgt5vbzz9wZWaJTEHn3Z1zXB3tQ5WiPeddLo17l4d5tJTkxafvv9cfvF3ncTzJVGyMsmHw6nO6defXx0J8y5aYW9mqi6ULZZ7GU1wa6cWlKa3Dz58M8HJ1G6Nq1sVMEz5u7qIIQajT0Tq8x+MgV9QPjFeqJntlA4cqW4dLKWhg+g+ZtVdo5oc6VclQ0GM5tp4VwWTET8ClNczvdmv0eZ1MRrqOhneokhvRfk6HOskWdRLZImcjfmscpguDgeZKsagbTC8kmN/Y4Z+1vyYFp4JuzoR9OBRpX/u7NIWLQ0GiYZ/V/tt5nYfzG/Y4H/A5iYa9LH7N8Ox9iokTPoZ7PfbAVSkQQrC5u8/KVh4hwO9U7fksyVyJvX2D6di41a2pHyWWkzl74PmywdTCFwq6gUMRPFlO1eW0Da+pappWmZYqUDGr/B8n0S8tJjLWrBum/fC1dOHAWFNwr1Pl/rXRhu4Ok2jmalE7EmWtkFvUT9ElpIC16qZKAAAAAElFTkSuQmCC"/>
+<text x="218" y="439" font-size="11" font-weight="600" fill="#147eba">Private subnet 1:</text>
+<text x="218" y="453" font-size="11" font-weight="600" fill="#147eba">10.0.1.0/24</text>
+<rect x="626" y="424" width="248" height="200" fill="#eff5fb" stroke="#147eba" stroke-width="1.2"/>
+<image x="630" y="428" width="22" height="22" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABcAAAAYCAYAAAARfGZ1AAAB/klEQVR4nNWWTWsTURSGn3tnJmmSJmmatmkqQYptKbZEKHahuBJUEEHiSvwBbvwL+g90I+2qLqrizq1QwYUfLZTS4EKRFmlrNIHakiaxzUczmYxkQEGStkmcCr5wucw95z68M3MO94o362kzNhvnOCQ5RqntbvR3aNyaGCA23o9bk7xe2+Hu3OrfOx/p8TB7M8pgt5vbzz9wZWaJTEHn3Z1zXB3tQ5WiPeddLo17l4d5tJTkxafvv9cfvF3ncTzJVGyMsmHw6nO6defXx0J8y5aYW9mqi6ULZZ7GU1wa6cWlKa3Dz58M8HJ1G6Nq1sVMEz5u7qIIQajT0Tq8x+MgV9QPjFeqJntlA4cqW4dLKWhg+g+ZtVdo5oc6VclQ0GM5tp4VwWTET8ClNczvdmv0eZ1MRrqOhneokhvRfk6HOskWdRLZImcjfmscpguDgeZKsagbTC8kmN/Y4Z+1vyYFp4JuzoR9OBRpX/u7NIWLQ0GiYZ/V/tt5nYfzG/Y4H/A5iYa9LH7N8Ox9iokTPoZ7PfbAVSkQQrC5u8/KVh4hwO9U7fksyVyJvX2D6di41a2pHyWWkzl74PmywdTCFwq6gUMRPFlO1eW0Da+pappWmZYqUDGr/B8n0S8tJjLWrBum/fC1dOHAWFNwr1Pl/rXRhu4Ok2jmalE7EmWtkFvUT9ElpIC16qZKAAAAAElFTkSuQmCC"/>
+<text x="658" y="439" font-size="11" font-weight="600" fill="#147eba">Private subnet 2:</text>
+<text x="658" y="453" font-size="11" font-weight="600" fill="#147eba">10.0.3.0/24</text>
+<rect x="200" y="466" width="220" height="64" fill="none" stroke="#d13212" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="208" y="481" font-size="10.5" fill="#d13212">Security group</text>
+<image x="372" y="486" width="32" height="32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAEQklEQVR4nL2XSWwcRRSGv+qu6bHHduIlMokXnEiAiRgWKSg5YECREJs45IREkEAsQiAOiAMgotw4cOMCiF1cLCFE2JWAIsAhgIK4QBxC7ATJSWy8xNuMPVvPdFehqrY9Y+ycSPtJrVZXddf7+9Wr//1PjI9PaZIpSCSoNV1cQC1M4TR3IJINdiwcO4XT0oloaIWwgpq9iKhvQjS1gwpR2UnQIU5zJzguenEalZ3A7UhDqQAyAV5ylR+Hxs1rnBtTU2cpD7yJunQuGggrlD57mWDktwhgaYHy8XeoDB0DrdFhheDPb6mc6Ef7eftOMDRA6dBLZjVINa5xHgG4jOlyHjVzHpYWM07UxBAUMkuAAtTsBXR+1kyCVujcDCozBiqIPsnNEE6csXOXM7naa82LWlfH7BVaR3rlWVXfU8tjBkjNN/bBBECBU7O2qP63GF8o6eWQFt5/BL0wFa0blNDFLKJ+M0LW2cXU/Bgi1RrlxNIfk6hH1DVF4IoL9u9FqsU6MWvqQhantXvFodt9M8kHDuK0dP0nAlqhM/9EDtt61g2X03ED/8f07AXU4rTdvvW3AEjs2Y/X9zhxWPmnD6j89d2qMan9nN0jXVyM9jdmEyaX/Fy0XUIgi5+8gJ4btedY5+ZiBxBODlP8+HmQSYSXQiZvfxJdLtizWzr0YuwATPJ5fY8hNl0FjkS6PbvshC5mEHItUVxxq9uE23Mrzpbt9lFa1jJM5ufRy2c/TtOhJTldyoEAWf61H12Yh4oP/mL8/jMTlE/0I1KGX5JIAuM4jzb3DYoA5QK4Eh0GSK/viYiEilnCMz9sTBLe8RRO29XmUCKXS61FJkTsALRwLZVH9A0yGDyMISN7FE1o4gaQmyE4dRjRuAXcBNL/5UPU9Iit2bq0AUk4P4r/47uWA0RdAzL16HsRCxaz5N9+MHYAbmea5P0HanIg1bI0IxE1dTou007CSjq7BZgcGBpYoWJdKcYPoDBHMDyAGG9HGCr2j72Fnj0PaklQxA1g7iL+968jXAnJRmT9vles+jElstD/bOwAnPZrSe59BmHUtnCRztbeajFy16rjK25eA87WndVipIyWD4NIvykjPGO2wLe9gjmGkSD5/CBqbhRhjmI+fkGiLv1N8dMDIL1IkCS270K39dg8qMyPxg7AdFJyxy5EnWmIPKQpDFZSF7IEp4/GDsBp6ca78+lqDuC40Yy7dI/ZtFEhZv/NxTqy3D/yKv7R1+LxHvg4nelVQ2K5MzL1IDh3HF0pRY/jpwlOfo28ZR/Otuttc1r86DkSu/cjr+tDFzJW55vOV6bvhqBMMHgElZvG2/MQ1DURDH5D5Y8vqX/4DUv1xpz6Zpyum1Y67moEHBfZu7cK1ksRnP0ZuWM37jW3WQclQxxdN5JI32dbuOD3L3C29ZJI32uBq8lhkBK58y7L93p6hMrJr0ik7wHXWzco/wJN4g6TRH/+lAAAAABJRU5ErkJggg=="/>
+<text x="210" y="500" font-size="11.5" fill="#16191f">App instance</text>
+<text x="210" y="515" font-size="10.5" fill="#5a6b7b">t3.small, port 4000</text>
+<rect x="640" y="466" width="220" height="64" fill="none" stroke="#d13212" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="648" y="481" font-size="10.5" fill="#d13212">Security group</text>
+<image x="812" y="486" width="32" height="32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAEQklEQVR4nL2XSWwcRRSGv+qu6bHHduIlMokXnEiAiRgWKSg5YECREJs45IREkEAsQiAOiAMgotw4cOMCiF1cLCFE2JWAIsAhgIK4QBxC7ATJSWy8xNuMPVvPdFehqrY9Y+ycSPtJrVZXddf7+9Wr//1PjI9PaZIpSCSoNV1cQC1M4TR3IJINdiwcO4XT0oloaIWwgpq9iKhvQjS1gwpR2UnQIU5zJzguenEalZ3A7UhDqQAyAV5ylR+Hxs1rnBtTU2cpD7yJunQuGggrlD57mWDktwhgaYHy8XeoDB0DrdFhheDPb6mc6Ef7eftOMDRA6dBLZjVINa5xHgG4jOlyHjVzHpYWM07UxBAUMkuAAtTsBXR+1kyCVujcDCozBiqIPsnNEE6csXOXM7naa82LWlfH7BVaR3rlWVXfU8tjBkjNN/bBBECBU7O2qP63GF8o6eWQFt5/BL0wFa0blNDFLKJ+M0LW2cXU/Bgi1RrlxNIfk6hH1DVF4IoL9u9FqsU6MWvqQhantXvFodt9M8kHDuK0dP0nAlqhM/9EDtt61g2X03ED/8f07AXU4rTdvvW3AEjs2Y/X9zhxWPmnD6j89d2qMan9nN0jXVyM9jdmEyaX/Fy0XUIgi5+8gJ4btedY5+ZiBxBODlP8+HmQSYSXQiZvfxJdLtizWzr0YuwATPJ5fY8hNl0FjkS6PbvshC5mEHItUVxxq9uE23Mrzpbt9lFa1jJM5ufRy2c/TtOhJTldyoEAWf61H12Yh4oP/mL8/jMTlE/0I1KGX5JIAuM4jzb3DYoA5QK4Eh0GSK/viYiEilnCMz9sTBLe8RRO29XmUCKXS61FJkTsALRwLZVH9A0yGDyMISN7FE1o4gaQmyE4dRjRuAXcBNL/5UPU9Iit2bq0AUk4P4r/47uWA0RdAzL16HsRCxaz5N9+MHYAbmea5P0HanIg1bI0IxE1dTou007CSjq7BZgcGBpYoWJdKcYPoDBHMDyAGG9HGCr2j72Fnj0PaklQxA1g7iL+968jXAnJRmT9vles+jElstD/bOwAnPZrSe59BmHUtnCRztbeajFy16rjK25eA87WndVipIyWD4NIvykjPGO2wLe9gjmGkSD5/CBqbhRhjmI+fkGiLv1N8dMDIL1IkCS270K39dg8qMyPxg7AdFJyxy5EnWmIPKQpDFZSF7IEp4/GDsBp6ca78+lqDuC40Yy7dI/ZtFEhZv/NxTqy3D/yKv7R1+LxHvg4nelVQ2K5MzL1IDh3HF0pRY/jpwlOfo28ZR/Otuttc1r86DkSu/cjr+tDFzJW55vOV6bvhqBMMHgElZvG2/MQ1DURDH5D5Y8vqX/4DUv1xpz6Zpyum1Y67moEHBfZu7cK1ksRnP0ZuWM37jW3WQclQxxdN5JI32dbuOD3L3C29ZJI32uBq8lhkBK58y7L93p6hMrJr0ik7wHXWzco/wJN4g6TRH/+lAAAAABJRU5ErkJggg=="/>
+<text x="650" y="500" font-size="11.5" fill="#16191f">App instance</text>
+<text x="650" y="515" font-size="10.5" fill="#5a6b7b">t3.small, port 4000</text>
+<rect x="200" y="546" width="220" height="64" fill="none" stroke="#d13212" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="208" y="561" font-size="10.5" fill="#d13212">Security group</text>
+<image x="372" y="566" width="32" height="30" href="data:image/png;base64,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"/>
+<text x="210" y="580" font-size="11.5" fill="#16191f">RDS primary</text>
+<text x="210" y="595" font-size="10.5" fill="#5a6b7b">PostgreSQL 17, port 5432</text>
+<rect x="640" y="546" width="220" height="64" fill="none" stroke="#d13212" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="648" y="561" font-size="10.5" fill="#d13212">Security group</text>
+<image x="812" y="566" width="32" height="30" href="data:image/png;base64,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"/>
+<text x="650" y="580" font-size="11.5" fill="#16191f">RDS standby</text>
+<text x="650" y="595" font-size="10.5" fill="#5a6b7b">Multi-AZ failover target</text>
+<image x="514" y="318" width="32" height="30" href="data:image/png;base64,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"/>
+<text x="530" y="364" font-size="11" fill="#16191f" text-anchor="middle">Internet</text>
+<text x="530" y="378" font-size="11" fill="#16191f" text-anchor="middle">gateway</text>
+<rect x="466" y="404" width="128" height="106" fill="none" stroke="#d13212" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="474" y="419" font-size="10.5" fill="#d13212">Security group</text>
+<image x="514" y="426" width="32" height="32" href="data:image/png;base64,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"/>
+<text x="530" y="478" font-size="11" fill="#16191f" text-anchor="middle">Application</text>
+<text x="530" y="492" font-size="11" fill="#16191f" text-anchor="middle">Load Balancer</text>
+<image x="515" y="528" width="30" height="27" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAbCAYAAABr/T8RAAACmElEQVR4nNVWW08TQRT+dne2lCItraZy0aiNGoMaE2+JwosJJr75ZHyQH+CbP8X4A3wjPvjggyZK1Bg0JZIQjQRRpEqCAtJCCt1d9tbZHbOnXIp4KWmL8iWTnP1mzn5zdvacOXg+kBaabojthGlaQuKcC0VRsN1g2su7iHX3QlbDWEr3wRx7QRPhQ6cR6+qFsisBbeg+jHePiW/o6KT1LN4O/c1D6MMPiFeTKeJDyRSM0afQBu+VBOLtxDd0dMIcf4VCug+Cu5CK+RnBYnsBWQFfmoO3vEgO+Se3YU4MEu/bOnx7mXiJhaA0RgGFwbcNGiVeXeFVCMeEZ2klXmGQG6PkJ1wLvqXRMwt2tBZ+SyuNVQFeyG76RKJogxftX/AOeHF+M89dePrCT6wEGbWArEBS1K25oEoEgpEjF9F85iqU5j0V+7FqhcOps4heuA41ODIJMEafwTcL9Rf29HmYHwfQ0HYMzrf3gMcr8mPVCrtznyE3xsCiSTiz4xX7yfhHkHecMGtpo3wMIGyDis8q1MS++glHjl9C08kesp1sBvrbR2SHD5yi1PrrxlEBlObdiJ6/toELJQ+i6cRlTGcn4ea+QMBHUHoTV25BuA7iPTcBsb7emhyG83UEYuWvr0hYuDY5lSOIzBjph2et56zvLMPKDNGGnKmN671CFkL4W4s4eKGZeb2B4/oCuJajYsFiSTpze2qEbp/gcnFmPgCiLORanbE7l1mrUCyxH5GjXWT7rglneuyPojsznaqFXIvbSZJkQJJKV2Ngb0etDrUeRqz7BpRIHM73CVif0vBdq/4R80IOXJsvtU6Ls9RxVAJWrbBn5JHvv0PNIjfyQFmu1lUYQc0qa/r++7+a/W4inDq3VldrDTnchB+1K4Bxj0G7PAAAAABJRU5ErkJggg=="/>
+<text x="530" y="572" font-size="11" font-weight="600" fill="#ed7100" text-anchor="middle">Auto Scaling</text>
+<text x="530" y="586" font-size="11" font-weight="600" fill="#ed7100" text-anchor="middle">group</text>
+<g stroke="#5a6b7b" stroke-width="1.2" fill="none">
+<path d="M530 49 L530 164"/>
+<path d="M610 187 L650 187"/>
+<path d="M1000 60 L1000 140 L900 140 L900 164"/>
+<path d="M1000 60 L1000 140 L720 140 L720 164"/>
+<path d="M530 210 L530 318"/>
+<path d="M530 348 L530 404"/>
+<path d="M466 457 L420 457"/>
+<path d="M594 457 L640 457"/>
+<path d="M310 530 L310 546"/>
+<path d="M750 530 L750 546"/>
+<path d="M326 368 L514 368" stroke-dasharray="4 3"/>
+<path d="M500 541 L434 541" stroke-dasharray="4 3"/>
+<path d="M560 541 L626 541" stroke-dasharray="4 3"/>
+<path d="M420 610 L530 610 L530 600" stroke-dasharray="4 3"/>
+<path d="M640 610 L530 610" stroke-dasharray="4 3"/>
+</g>
+<text x="545" y="230" font-size="10" fill="#5a6b7b">/api/*</text>
+<text x="618" y="182" font-size="10" fill="#5a6b7b">site</text>
+<text x="360" y="364" font-size="10" fill="#5a6b7b">outbound</text>
+<text x="530" y="626" font-size="10" fill="#5a6b7b" text-anchor="middle">synchronous replication</text>
+<rect x="30" y="700" width="1120" height="34" rx="4" fill="#f7f8fa" stroke="#d5dbdb"/>
+<text x="46" y="715" font-size="11" fill="#16191f">Declared as Terraform in infra/ and applied to ap-south-1. One stage variable selects the build: stage 1 a single EC2 instance, stage 2 RDS Multi-AZ, stage 3 the diagram above.</text>
+<text x="46" y="729" font-size="11" fill="#5a6b7b">Both instances write to the RDS primary endpoint; the standby takes over on failover. Shell access is SSM Session Manager, so the VPC has no SSH ingress.</text>
 </svg>
