@@ -47,7 +47,7 @@ jobs:
         env:
           VITE_API_URL: /api
         run: |
-          npm ci
+          npm install --no-audit --no-fund
           npx vite build
 
       - name: Publish the frontend to S3
