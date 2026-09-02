@@ -22,3 +22,7 @@ infra/*.tfplan
 infra/terraform.tfvars
 
 *.pem
+
+# Postman local workspace scaffolding
+.postman/
+postman/globals/
