@@ -512,3 +512,10 @@ including TLS, stage transitions and the teardown checklist, is in [DEPLOYMENT.m
 - CloudFront serves the site and the API from one distribution. SPA routing is handled by a
   CloudFront Function rather than custom error responses, because custom error responses apply to
   the whole distribution and would rewrite genuine API 403 and 404 replies into the index page.
+- The live API runs on Render's free instance type, which stops after roughly fifteen minutes
+  without traffic. The next request restarts it and can take up to a minute before the first reply.
+  This is a property of the free tier rather than of the application, and it disappears on any paid
+  instance or on the AWS build.
+- Product image upload is inactive on the free deployment. The feature writes to S3 and reads back
+  through presigned URLs, so it needs a bucket and credentials; `S3_IMAGE_BUCKET` is left empty
+  there and the rest of the catalogue behaves normally without it.
