@@ -21,20 +21,14 @@ that is normal. Load the portal once and give it a moment before judging it.
 
 ### The AWS build is also included
 
-The free hosting above is what is live right now, because the assignment does not require paid
-infrastructure. The repository also carries a complete Terraform build for AWS in [`infra/`](infra),
-described under [Architecture](#architecture), which provisions a VPC across two availability zones,
-an Auto Scaling group behind an Application Load Balancer, RDS Multi-AZ and CloudFront. It is
-destroyed between demonstrations to avoid running cost and can be raised with `./scripts/up.sh 3`.
-Every rebuild issues a new CloudFront domain, so no AWS URL is quoted here.
+Render is what is live. The repository also carries a full Terraform build for AWS in
+[`infra/`](infra), raised with `./scripts/up.sh 3` and destroyed between demonstrations, so no AWS
+URL is quoted here. Both resilience claims were measured, not assumed:
 
-Both resilience claims on that build were exercised rather than assumed:
-
-- **Database failover.** `reboot-db-instance --force-failover` moved the primary from `ap-south-1b`
-  to `ap-south-1a`. The API recovered on its own after roughly twenty five seconds with no restart.
-- **Instance loss.** Hard terminating an instance in the Auto Scaling group produced a single failed
-  request, after which the group launched a replacement and both targets were healthy again within
-  about two and a half minutes.
+| Test | Command | Result |
+| --- | --- | --- |
+| Database failover | `reboot-db-instance --force-failover` | primary moved `ap-south-1b` to `ap-south-1a`, API recovered on its own in about 25s, no restart |
+| Instance loss | hard terminate an ASG instance | one failed request, replacement launched, both targets healthy again in about 2m30s |
 
 ## Contents
 
@@ -132,120 +126,65 @@ security group accepts port 5432 from the application security group only.
 
 ### Stage 3, load balanced and auto scaled
 
-```mermaid
-flowchart TB
-  users((Internet))
-  gha["GitHub Actions<br/>OIDC, no stored keys"]
+![Stage 3 AWS architecture](docs/aws-architecture.svg)
 
-  subgraph aws["AWS Cloud, ap-south-1"]
-    cf["CloudFront distribution"]
-    site[("S3 static site")]
-    ecr[("ECR, API image")]
-
-    users --> cf
-    cf -->|"default /*"| site
-    gha -. "sync build" .-> site
-    gha -. "push image" .-> ecr
-
-    subgraph vpc["VPC 10.0.0.0/16"]
-      alb["Application load balancer"]
-      cf -->|"/api/*"| alb
-
-      subgraph aza["Availability zone A"]
-        subgraph puba["Public subnet 10.0.0.0/24"]
-          nat["NAT gateway"]
-        end
-        subgraph priva["Private subnet 10.0.1.0/24"]
-          app1["App instance, ASG<br/>t3.small"]
-          rds1[("RDS primary<br/>PostgreSQL 17")]
-        end
-      end
-
-      subgraph azb["Availability zone B"]
-        subgraph pubb["Public subnet 10.0.2.0/24"]
-          albnode["ALB node"]
-        end
-        subgraph privb["Private subnet 10.0.3.0/24"]
-          app2["App instance, ASG<br/>t3.small"]
-          rds2[("RDS standby")]
-        end
-      end
-
-      alb --> app1
-      alb --> app2
-      app1 --> rds1
-      app2 --> rds1
-      rds1 -. "synchronous replication" .-> rds2
-      app1 --> nat
-      app2 --> nat
-      app1 -. "pull image" .-> ecr
-    end
-  end
-```
-
-The final state runs the stateless API on an Auto Scaling group of `t3.small` instances spread across
-both private subnets, fronted by an internet facing load balancer in the public subnets and a single
-CloudFront distribution that serves the React build from S3 and proxies `/api` to the balancer. The
-database is RDS PostgreSQL 17 Multi-AZ, with a synchronous standby in the second zone. A single NAT
-gateway in zone A gives both private subnets outbound access. Deployments arrive through GitHub
-Actions over OIDC, which pushes the API image to ECR and the frontend build to S3 without any stored
-AWS credentials.
-
-The application instances move into the private subnets behind an Auto Scaling group. They accept
-traffic on port 4000 from the load balancer security group and from nowhere else. There is no SSH
-ingress anywhere in the VPC; shell access is through SSM Session Manager. CloudFront sits in front
-with two behaviours, so the site and the API share one origin and one free TLS certificate.
+| Decision | Detail |
+| --- | --- |
+| Compute | Auto Scaling group of `t3.small`, one per private subnet, API on port 4000 |
+| Ingress | ALB in the public subnets, security group allows 4000 to the app group only |
+| Database | RDS PostgreSQL 17 Multi-AZ, 5432 from the app security group only |
+| Egress | One NAT gateway in zone A, shared by both private subnets |
+| Edge | One CloudFront distribution, `default /*` to S3 and `/api/*` to the ALB |
+| Shell access | SSM Session Manager, no SSH ingress anywhere in the VPC |
+| Deploys | GitHub Actions over OIDC, image to ECR and build to S3, no stored AWS keys |
 
 ## Modules
 
-**Authentication and roles.** JWT login for four roles: admin, sales, warehouse and accounts.
-Passwords are bcrypt hashed. Login is rate limited. There is no public sign up: this is an internal
-portal, and letting a stranger choose their own role would defeat the permission model. Accounts are
-issued by an admin instead.
+| Module | Screens | Enforced rules |
+| --- | --- | --- |
+| Auth | Login | bcrypt hashes, rate limited login, no public sign up, token revalidated against the live account on every request |
+| Users | Staff list, create, edit, reset password | admin only; an admin cannot demote or deactivate themselves |
+| Customers | List, detail, follow up queue | `mobile` is unique and a duplicate answers 409; notes are dated and append only |
+| Products | Catalogue, stock movement log | stock is read only on the product form; every change writes a movement row |
+| Challans | List, builder, PDF | confirm deducts stock, cancel returns it, numbers come from a sequence table |
 
-**User management.** An admin only page to add staff, change a name or role, deactivate and
-reactivate an account, and reset a password. An admin cannot deactivate or demote themselves, so the
-portal cannot be locked out of its own administration. Every request revalidates the account behind
-the token, so deactivating someone ends their session immediately rather than when their token
-expires, and a role change applies on their very next request.
+### Data model
 
-**Customer CRM.** Name, mobile, email, business name, optional GST number, customer type, full
-address, status, follow up date and notes. Mobile is unique, so the same number cannot be entered
-against two accounts. Search across name, business, mobile, email and GST, filter by status and
-type, and a dated follow up note trail on the detail page. A dedicated follow up queue lists every
-account with a follow up date, bucketed into overdue, today and upcoming so nothing owed to a
-customer is lost.
+| Model | Key columns | Notes |
+| --- | --- | --- |
+| `User` | `email @unique`, `passwordHash`, `role`, `isActive` | `Role` is ADMIN, SALES, WAREHOUSE, ACCOUNTS |
+| `Customer` | `mobile @unique`, `businessName`, `gstNumber?`, `type`, `status`, `followUpDate?` | `CustomerType` RETAIL, WHOLESALE, DISTRIBUTOR; `CustomerStatus` LEAD, ACTIVE, INACTIVE |
+| `CustomerNote` | `customerId`, `note`, `followUpDate?`, `createdById` | the dated follow up trail |
+| `Product` | `sku @unique`, `unitPrice numeric(12,2)`, `currentStock`, `minStockAlert`, `location` | `imageKey` is null when S3 is not configured |
+| `StockMovement` | `productId`, `type IN\|OUT`, `quantity`, `reason`, `createdById`, `referenceId?` | the authoritative stock history |
+| `Challan` | `challanNumber @unique`, `status`, `totalQuantity`, `totalAmount numeric(12,2)` | `ChallanStatus` DRAFT, CONFIRMED, CANCELLED |
+| `ChallanItem` | `productId`, `productName`, `productSku`, `unitPrice`, `quantity`, `lineTotal` | name, SKU and price are snapshots, not lookups |
+| `DocumentSequence` | `@@id([docType, year])`, `lastNumber` | issues `CH-YYYY-NNNN` |
 
-**Products and inventory.** Name, SKU, category, unit price, current stock, minimum stock alert
-level and warehouse location. Stock is never edited directly on the product form. Every change goes
-through a stock movement recording the product, quantity, direction, reason, author and timestamp,
-so the movement log is the authoritative history.
+### Challan lines are snapshots
 
-**Sales challans.** Select a customer, add product lines, and save as draft or confirmed. Challan
-numbers are generated automatically from a sequence table. Confirming reduces stock; cancelling a
-confirmed challan returns it.
+```prisma
+model ChallanItem {
+  productId   String
+  productName String
+  productSku  String
+  unitPrice   Decimal @db.Decimal(12, 2)
+}
+```
 
-### Why challan lines are snapshots
+A rename or a reprice must not rewrite a challan already handed to a customer, so the document
+stores what was delivered and charged rather than looking it up again.
 
-`ChallanItem` stores `productName`, `productSku` and `unitPrice` alongside the product id. A challan
-is a document that was handed to a customer on a particular day. If a product is later renamed or
-repriced, the historical challan and its PDF must still show what was actually delivered and
-charged. Keeping only a foreign key would silently rewrite history.
-
-### How stock is protected
-
-Confirming a challan runs inside one transaction. Each line is decremented with a conditional
-update:
+### Oversell is stopped in SQL, not in application code
 
 ```sql
 UPDATE products SET current_stock = current_stock - $qty
 WHERE id = $id AND current_stock >= $qty
 ```
 
-If that affects zero rows the stock was insufficient, and the whole transaction is rolled back with
-a 400 naming the SKU, the available quantity and the required quantity. The condition lives in the
-`WHERE` clause rather than in application code, so two users confirming at the same moment cannot
-both pass a check and drive stock negative. A read-then-write check would race.
+Zero rows affected means the stock was insufficient, and the whole transaction rolls back with a
+400 naming the SKU, the available quantity and the required quantity. The condition sits in the
+`WHERE`, so two users confirming at the same moment cannot both pass a read-then-write check.
 
 ## Running locally
 
@@ -411,12 +350,10 @@ Run **Auth / Login** first; it stores the token for every other request.
 
 ## Roles and permissions
 
-Authorisation is enforced in the API, not in the interface. The navigation and dashboard hide what a
-role cannot use, but that is a usability choice; removing it would change nothing, because every
-route is guarded server side and answers 403.
+Enforced in the API, not the interface. The navigation hides what a role cannot use, but removing
+that would change nothing: every route is guarded server side and answers 403.
 
-**What each role can read.** A warehouse user has no business reason to hold customer contact
-details, so those endpoints are closed to it rather than merely hidden.
+**What each role can read.**
 
 | Endpoint | Admin | Sales | Warehouse | Accounts |
 | --- | :---: | :---: | :---: | :---: |
@@ -427,11 +364,9 @@ details, so those endpoints are closed to it rather than merely hidden.
 | `/challans` | yes | yes | yes | yes |
 | `/dashboard/summary` | everything | no stock alerts | no customer figures or follow ups | no stock alerts |
 
-The dashboard response is assembled per role rather than filtered in the browser, so a warehouse
-token never receives customer counts or follow up names in the first place.
-
-A challan carries the delivery address a warehouse user needs, but their copy of the customer block
-omits the GST number, which is billing information rather than dispatch information.
+The dashboard payload is assembled per role, so a warehouse token never receives customer counts or
+follow up names at all. A warehouse copy of a challan carries the delivery address but not the GST
+number.
 
 **What each role can change.**
 
@@ -446,9 +381,6 @@ omits the GST number, which is billing information rather than dispatch informat
 | Create and cancel challans | yes | yes | | |
 | Confirm challans | yes | yes | yes | |
 | Download challan PDF | yes | yes | | yes |
-
-Stock is never editable directly on the product form. Every change is a stock movement, so the log
-is the authoritative history rather than a side effect.
 
 ## Deployment
 
@@ -486,44 +418,25 @@ including TLS, stage transitions and the teardown checklist, is in [DEPLOYMENT.m
 
 ## Assumptions
 
-- The business operates in India, so mobile numbers are validated as ten digits starting 6 to 9,
-  pincodes as six digits, and GST numbers against the standard fifteen character GSTIN format.
-- Challan numbers run `CH-YYYY-NNNN` on the calendar year. A real deployment would likely want the
-  Indian financial year instead; the sequence table already keys on year so that is a small change.
-- Prices are stored as `numeric(12,2)` and returned as JSON numbers. Values in this domain stay far
-  inside the range where that is exact.
-- A challan is a delivery document, so confirming it is what moves stock. Purchase orders and
-  accounting invoices are named in the brief's background but are not part of the required modules,
-  so they are not built.
-- Cancelling a confirmed challan returns stock rather than blocking, which matches how a physical
-  delivery that was refused or returned is handled.
+| Area | Assumption |
+| --- | --- |
+| Locale | Indian business, so mobiles validate as 10 digits starting 6 to 9, pincodes as 6 digits, GST against the 15 character GSTIN format |
+| Numbering | `CH-YYYY-NNNN` on the calendar year; the sequence table keys on year, so the Indian financial year is a small change |
+| Money | `numeric(12,2)`, returned as JSON numbers, which stays exact at this range |
+| Scope | A challan is a delivery document, so confirming it moves stock. Purchase orders and accounting invoices are named in the brief's background but are not required modules |
+| Returns | Cancelling a confirmed challan returns stock rather than blocking, matching a refused or returned delivery |
 
 ## Known limitations
 
-- The tests cover the API end to end but there are no frontend component tests and no browser level
-  tests. The React layer is verified by hand and by the typechecker only.
-- Tokens do not refresh. A token lasts eight hours and the user signs in again after that. Resetting
-  a password blocks the old one immediately but does not close sessions that are already open, since
-  there is no token revocation list.
-- New staff are given a password by the admin and told it directly. There is no invitation email and
-  no self-service password reset, because the portal sends no mail.
-- The challan form loads up to one hundred customers and products into select lists rather than
-  paging or searching within them. Fine at this data volume, not at ten thousand products.
-- Stage 3 runs one NAT gateway rather than one per availability zone. This is a deliberate cost
-  trade off and it means an AZ A failure would cut outbound internet for instances in AZ B. Inbound
-  traffic and the database would still fail over correctly.
-- Product images are soft deleted only in the sense that replacing an image leaves the previous
-  object in the bucket. Bucket versioning is on, so nothing is lost, but nothing is reaped either.
-- Hard terminating an instance costs a small number of requests. The target group health check runs
-  every thirty seconds, so the load balancer keeps sending traffic to a dead target until the next
-  check fails. A lifecycle hook that deregisters the target before shutdown would close that window.
-- CloudFront serves the site and the API from one distribution. SPA routing is handled by a
-  CloudFront Function rather than custom error responses, because custom error responses apply to
-  the whole distribution and would rewrite genuine API 403 and 404 replies into the index page.
-- The live API runs on Render's free instance type, which stops after roughly fifteen minutes
-  without traffic. The next request restarts it and can take up to a minute before the first reply.
-  This is a property of the free tier rather than of the application, and it disappears on any paid
-  instance or on the AWS build.
-- Product image upload is inactive on the free deployment. The feature writes to S3 and reads back
-  through presigned URLs, so it needs a bucket and credentials; `S3_IMAGE_BUCKET` is left empty
-  there and the rest of the catalogue behaves normally without it.
+| Limitation | Detail |
+| --- | --- |
+| Free tier sleep | The Render instance stops after about 15 minutes idle and the next request takes up to a minute. Gone on any paid instance or on AWS |
+| Image upload | Inactive on the free deployment. `S3_IMAGE_BUCKET` is empty, so uploads are refused and the rest of the catalogue is unaffected |
+| Frontend tests | API is covered end to end; React is verified by hand and by the typechecker only |
+| Tokens | Eight hours, no refresh and no revocation list, so a password reset blocks the old password but not an open session |
+| Onboarding | Admin sets the password and tells the user; the portal sends no mail |
+| Select lists | The challan form loads up to 100 customers and products rather than paging; fine at this volume, not at 10,000 products |
+| One NAT gateway | Deliberate cost trade off. Losing zone A cuts outbound internet for zone B instances; inbound and the database still fail over |
+| Image reaping | Replacing an image leaves the old object. Bucket versioning is on, so nothing is lost and nothing is cleaned up |
+| Deregistration | Hard terminating an instance costs a few requests, because the health check runs every 30s. A lifecycle hook would close that window |
+| SPA routing | Handled by a CloudFront Function, not custom error responses, which would rewrite genuine API 403 and 404 replies into the index page |

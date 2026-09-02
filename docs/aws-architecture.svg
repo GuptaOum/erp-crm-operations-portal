@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 820" width="1180" height="820" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <rect width="1180" height="820" fill="#ffffff"/>
+
+  <text x="24" y="30" font-size="15" fill="#16191f">The final state of the infrastructure is:</text>
+
+  <g>
+    <circle cx="70" cy="86" r="14" fill="none" stroke="#5a6b7b" stroke-width="1.5"/>
+    <text x="50" y="118" font-size="12" fill="#16191f">Internet</text>
+    <rect x="150" y="66" width="160" height="40" rx="4" fill="#ffffff" stroke="#5a6b7b" stroke-width="1.5"/>
+    <text x="162" y="82" font-size="11.5" fill="#16191f">GitHub Actions</text>
+    <text x="162" y="97" font-size="10.5" fill="#5a6b7b">OIDC, no stored keys</text>
+  </g>
+
+  <rect x="24" y="140" width="1132" height="600" fill="none" stroke="#232f3e" stroke-width="1.5"/>
+  <rect x="24" y="140" width="30" height="26" fill="#232f3e"/>
+  <text x="62" y="158" font-size="13" font-weight="600" fill="#16191f">AWS Cloud</text>
+
+  <rect x="44" y="178" width="1092" height="544" fill="none" stroke="#147eba" stroke-width="1.3" stroke-dasharray="5 4"/>
+  <text x="76" y="197" font-size="12.5" font-weight="600" fill="#147eba">Region ap-south-1</text>
+
+  <rect x="820" y="212" width="140" height="46" rx="4" fill="#ffffff" stroke="#8c4fff" stroke-width="1.5"/>
+  <text x="832" y="232" font-size="11.5" fill="#16191f">CloudFront</text>
+  <text x="832" y="247" font-size="10.5" fill="#5a6b7b">site and /api behaviours</text>
+
+  <rect x="985" y="212" width="130" height="46" rx="4" fill="#ffffff" stroke="#7aa116" stroke-width="1.5"/>
+  <text x="997" y="232" font-size="11.5" fill="#16191f">S3</text>
+  <text x="997" y="247" font-size="10.5" fill="#5a6b7b">React build</text>
+
+  <rect x="985" y="272" width="130" height="46" rx="4" fill="#ffffff" stroke="#ed7100" stroke-width="1.5"/>
+  <text x="997" y="292" font-size="11.5" fill="#16191f">ECR</text>
+  <text x="997" y="307" font-size="10.5" fill="#5a6b7b">API image</text>
+
+  <rect x="64" y="226" width="740" height="478" fill="none" stroke="#7aa116" stroke-width="1.5"/>
+  <text x="96" y="245" font-size="12.5" font-weight="600" fill="#248814">VPC 10.0.0.0/16</text>
+
+  <rect x="86" y="262" width="300" height="424" fill="none" stroke="#00a4a6" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <text x="150" y="282" font-size="12" font-weight="600" fill="#00a4a6">Availability Zone A</text>
+  <rect x="484" y="262" width="300" height="424" fill="none" stroke="#00a4a6" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <text x="548" y="282" font-size="12" font-weight="600" fill="#00a4a6">Availability Zone B</text>
+
+  <rect x="102" y="296" width="268" height="90" fill="#f2f8ee" stroke="#7aa116" stroke-width="1.2"/>
+  <text x="114" y="314" font-size="11.5" font-weight="600" fill="#248814">Public subnet 1: 10.0.0.0/24</text>
+  <rect x="150" y="326" width="172" height="44" rx="4" fill="#ffffff" stroke="#8c4fff" stroke-width="1.4"/>
+  <text x="196" y="353" font-size="11.5" fill="#16191f">NAT gateway</text>
+
+  <rect x="500" y="296" width="268" height="90" fill="#f2f8ee" stroke="#7aa116" stroke-width="1.2"/>
+  <text x="512" y="314" font-size="11.5" font-weight="600" fill="#248814">Public subnet 2: 10.0.2.0/24</text>
+  <rect x="548" y="326" width="172" height="44" rx="4" fill="#ffffff" stroke="#8c4fff" stroke-width="1.4"/>
+  <text x="604" y="353" font-size="11.5" fill="#16191f">ALB node</text>
+
+  <rect x="102" y="404" width="268" height="266" fill="#eff5fb" stroke="#147eba" stroke-width="1.2"/>
+  <text x="114" y="422" font-size="11.5" font-weight="600" fill="#147eba">Private subnet 1: 10.0.1.0/24</text>
+  <rect x="500" y="404" width="268" height="266" fill="#eff5fb" stroke="#147eba" stroke-width="1.2"/>
+  <text x="512" y="422" font-size="11.5" font-weight="600" fill="#147eba">Private subnet 2: 10.0.3.0/24</text>
+
+  <rect x="120" y="436" width="232" height="86" fill="none" stroke="#d13212" stroke-width="1.3" stroke-dasharray="4 3"/>
+  <text x="130" y="453" font-size="11" fill="#d13212">Security group</text>
+  <rect x="150" y="462" width="176" height="46" rx="4" fill="#ffffff" stroke="#ed7100" stroke-width="1.4"/>
+  <text x="162" y="481" font-size="11.5" fill="#16191f">App instance, t3.small</text>
+  <text x="162" y="497" font-size="10.5" fill="#5a6b7b">port 4000, from the ALB only</text>
+
+  <rect x="518" y="436" width="232" height="86" fill="none" stroke="#d13212" stroke-width="1.3" stroke-dasharray="4 3"/>
+  <text x="528" y="453" font-size="11" fill="#d13212">Security group</text>
+  <rect x="548" y="462" width="176" height="46" rx="4" fill="#ffffff" stroke="#ed7100" stroke-width="1.4"/>
+  <text x="560" y="481" font-size="11.5" fill="#16191f">App instance, t3.small</text>
+  <text x="560" y="497" font-size="10.5" fill="#5a6b7b">port 4000, from the ALB only</text>
+
+  <rect x="120" y="556" width="232" height="92" fill="none" stroke="#d13212" stroke-width="1.3" stroke-dasharray="4 3"/>
+  <text x="130" y="573" font-size="11" fill="#d13212">Security group</text>
+  <rect x="150" y="582" width="176" height="50" rx="4" fill="#ffffff" stroke="#147eba" stroke-width="1.4"/>
+  <text x="162" y="602" font-size="11.5" fill="#16191f">RDS primary</text>
+  <text x="162" y="619" font-size="10.5" fill="#5a6b7b">PostgreSQL 17, 5432 from app</text>
+
+  <rect x="518" y="556" width="232" height="92" fill="none" stroke="#d13212" stroke-width="1.3" stroke-dasharray="4 3"/>
+  <text x="528" y="573" font-size="11" fill="#d13212">Security group</text>
+  <rect x="548" y="582" width="176" height="50" rx="4" fill="#ffffff" stroke="#147eba" stroke-width="1.4"/>
+  <text x="560" y="602" font-size="11.5" fill="#16191f">RDS standby</text>
+  <text x="560" y="619" font-size="10.5" fill="#5a6b7b">Multi-AZ failover target</text>
+
+  <rect x="398" y="292" width="72" height="64" rx="4" fill="#ffffff" stroke="#8c4fff" stroke-width="1.4"/>
+  <text x="406" y="318" font-size="10.5" fill="#16191f">Internet</text>
+  <text x="406" y="333" font-size="10.5" fill="#16191f">gateway</text>
+
+  <rect x="386" y="382" width="96" height="92" fill="none" stroke="#d13212" stroke-width="1.3" stroke-dasharray="4 3"/>
+  <text x="392" y="398" font-size="10.5" fill="#d13212">Security group</text>
+  <rect x="396" y="406" width="76" height="58" rx="4" fill="#ffffff" stroke="#8c4fff" stroke-width="1.4"/>
+  <text x="404" y="426" font-size="10.5" fill="#16191f">Application</text>
+  <text x="404" y="440" font-size="10.5" fill="#16191f">Load</text>
+  <text x="404" y="454" font-size="10.5" fill="#16191f">Balancer</text>
+
+  <rect x="376" y="492" width="116" height="54" fill="none" stroke="#ed7100" stroke-width="1.3" stroke-dasharray="4 3"/>
+  <text x="392" y="514" font-size="11" font-weight="600" fill="#ed7100">Auto Scaling</text>
+  <text x="412" y="531" font-size="11" font-weight="600" fill="#ed7100">group</text>
+
+  <g stroke="#5a6b7b" stroke-width="1.2" fill="none">
+    <path d="M70 100 L70 324 L398 324"/>
+    <path d="M434 356 L434 382"/>
+    <path d="M386 434 L326 470"/>
+    <path d="M482 434 L548 470"/>
+    <path d="M238 508 L238 556"/>
+    <path d="M636 508 L636 556"/>
+    <path d="M326 606 L548 606" stroke-dasharray="4 3"/>
+    <path d="M322 348 L398 330"/>
+    <path d="M310 80 L890 80 L890 212"/>
+    <path d="M890 234 L985 234" stroke-dasharray="4 3"/>
+    <path d="M310 96 L1050 96 L1050 272" stroke-dasharray="4 3"/>
+    <path d="M352 470 L1050 470 L1050 318" stroke-dasharray="4 3"/>
+    <path d="M820 240 L500 412" stroke-dasharray="4 3"/>
+  </g>
+
+  <text x="372" y="602" font-size="10" fill="#5a6b7b">synchronous replication</text>
+  <text x="905" y="228" font-size="10" fill="#5a6b7b">sync build</text>
+  <text x="905" y="462" font-size="10" fill="#5a6b7b">pull image</text>
+  <text x="506" y="404" font-size="10" fill="#5a6b7b">/api/*</text>
+  <text x="700" y="76" font-size="10" fill="#5a6b7b">default /*</text>
+
+  <rect x="24" y="756" width="1132" height="48" rx="4" fill="#f7f8fa" stroke="#d5dbdb"/>
+  <text x="40" y="776" font-size="11.5" fill="#16191f">Every resource above is declared as Terraform in infra/ and applied to ap-south-1. A single stage variable moves between the three builds:</text>
+  <text x="40" y="793" font-size="11.5" fill="#16191f">stage 1 a single EC2 instance, stage 2 RDS Multi-AZ, stage 3 the diagram above. terraform apply raises it and terraform destroy removes it, so nothing runs between demonstrations.</text>
+</svg>
