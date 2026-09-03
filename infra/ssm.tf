@@ -37,6 +37,15 @@ resource "aws_ssm_parameter" "database_url_direct" {
   tags = { Name = "${local.name}-database-url-direct" }
 }
 
+resource "aws_ssm_parameter" "database_replica_url" {
+  count = local.load_balanced && var.db_read_replica ? 1 : 0
+  name  = "/${local.name}/DATABASE_REPLICA_URL"
+  type  = "SecureString"
+  value = "postgresql://${var.db_username}:${urlencode(var.db_password)}@${aws_db_instance.replica[0].endpoint}/${var.db_name}"
+
+  tags = { Name = "${local.name}-database-replica-url" }
+}
+
 resource "aws_ssm_parameter" "redis_url" {
   count = local.load_balanced ? 1 : 0
   name  = "/${local.name}/REDIS_URL"

@@ -6,6 +6,22 @@ resource "aws_db_subnet_group" "main" {
   tags = { Name = "${local.name}-db-subnets" }
 }
 
+resource "aws_db_instance" "replica" {
+  count      = local.load_balanced && var.db_read_replica ? 1 : 0
+  identifier = "${local.name}-db-replica"
+
+  replicate_source_db = aws_db_instance.main[0].identifier
+  instance_class      = var.db_instance_class
+
+  vpc_security_group_ids = [aws_security_group.rds[0].id]
+  publicly_accessible    = false
+
+  skip_final_snapshot = true
+  apply_immediately   = true
+
+  tags = { Name = "${local.name}-db-replica" }
+}
+
 resource "aws_db_instance" "main" {
   count      = local.managed_database ? 1 : 0
   identifier = "${local.name}-db"

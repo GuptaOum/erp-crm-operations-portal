@@ -21,6 +21,7 @@ DATABASE_URL="$(read_parameter DATABASE_URL)"
 JWT_SECRET="$(read_parameter JWT_SECRET)"
 S3_IMAGE_BUCKET="$(read_parameter S3_IMAGE_BUCKET)"
 REDIS_URL="$(read_parameter REDIS_URL || true)"
+DATABASE_REPLICA_URL="$(read_parameter DATABASE_REPLICA_URL || true)"
 
 docker pull "$IMAGE"
 
@@ -36,5 +37,6 @@ docker run -d \
   -e JWT_SECRET="$JWT_SECRET" \
   -e S3_IMAGE_BUCKET="$S3_IMAGE_BUCKET" \
   -e REDIS_URL="$REDIS_URL" \
+  -e DATABASE_REPLICA_URL="$DATABASE_REPLICA_URL" \
   -e DASHBOARD_CACHE_SECONDS=30 \
   "$IMAGE"

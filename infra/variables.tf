@@ -45,6 +45,12 @@ variable "db_instance_class" {
   default     = "db.t3.micro"
 }
 
+variable "db_read_replica" {
+  description = "Create a read replica at stage 3 and point the application at it for reads. Off by default because it doubles the database bill"
+  type        = bool
+  default     = false
+}
+
 variable "db_name" {
   description = "Initial database name"
   type        = string

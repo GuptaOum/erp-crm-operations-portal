@@ -195,11 +195,26 @@ the limiter fails open and logs once rather than answering 500.
 | Users | What it needs |
 | --- | --- |
 | 50 staff, 1,000 customers | What is deployed today, on the free tier |
-| 1,000 staff, 10,000 customers | Stage 3 with the dashboard cache on, the Auto Scaling group allowed to reach 8 instances, and a larger database class: `-var db_instance_class=db.t4g.medium -var asg_min_size=3` |
-| Beyond that | A read replica for list queries, a trigram index for search, and PDF rendering moved off the request path |
+| 1,000 staff, 10,000 customers | Stage 3 with the dashboard cache on and a larger database class: `-var db_instance_class=db.t4g.medium` |
+| Beyond that | `-var db_read_replica=true`, then PDF rendering moved off the request path |
 
-The first thing to break is not throughput, it is the database class: `db.t3.micro` is burstable and
-throttles under sustained load long before the application instances are busy.
+**This was measured rather than guessed.** A stage 3 build with 10,000 customers and 5,000 products
+was driven at 800 concurrent users for twelve minutes: 88,137 requests, **zero failures**, and the
+Auto Scaling group never scaled because the application instances sat at **23% CPU** while RDS was
+pinned at **97%**. Adding application instances would have achieved nothing, which is exactly what
+the scaling policy concluded by staying still.
+
+So the ceiling here is the database, not the application tier, and the fixes are ordered by that:
+
+1. **Trigram indexes**, added in `20260903000000_search_trigram_indexes`. Search is a third of the
+   traffic and `ILIKE '%term%'` cannot use a btree index, so every search was a sequential scan
+   across five columns. `pg_trgm` GIN indexes make those lookups indexed.
+2. **A read replica**, `-var db_read_replica=true`. Roughly ninety five percent of this workload is
+   reads. The application picks it up through `DATABASE_REPLICA_URL` and routes reads to it while
+   writes and transactions stay on the primary.
+3. **A larger class**, last, because it buys time rather than efficiency. Note `db.t4g.medium` is
+   burstable: at sustained high CPU it exhausts credits and drops to baseline, so an `m` class is
+   the honest choice for steady load.
 
 ## Modules
 
@@ -505,7 +520,7 @@ including TLS, stage transitions and the teardown checklist, is in [DEPLOYMENT.m
 | Proxy pinning | RDS Proxy multiplexes best on simple queries. Prisma uses prepared statements, which pin a session to a connection for its lifetime, so the proxy gives connection reuse and failover survival here rather than full multiplexing |
 | Redis is best effort | If Redis is unreachable the login limiter fails **open**, allowing the request and logging once rather than answering 500. That is a deliberate availability choice on an internal portal; a public signup form would be a good argument for failing closed instead |
 | Onboarding | Admin sets the password and tells the user; the portal sends no mail |
-| Search quality | Customer and product search is `ILIKE` on a handful of columns. Fine into the tens of thousands of rows; past that it wants a trigram index or full text search |
+| Read consistency | With a read replica configured, list and search results can lag a write by milliseconds. Writes and anything inside a transaction always go to the primary. Leave the replica off and reads are strongly consistent |
 | NAT cost | Two NAT gateways, one per zone, so losing a zone does not cut outbound internet for the survivor. They are the largest hourly line item at roughly 0.11 USD an hour combined, which is why the stack is destroyed between demonstrations |
 | Image reaping | Replacing an image leaves the old object. Bucket versioning is on, so nothing is lost and nothing is cleaned up |
 | Deregistration | Hard terminating an instance costs a few requests, because the health check runs every 30s. A lifecycle hook would close that window |
