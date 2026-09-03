@@ -73,9 +73,9 @@ export function Login() {
           <table className="auth-roles">
             <thead>
               <tr>
-                <th>Email</th>
-                <th>Password</th>
-                <th>Role does</th>
+                <th scope="col">Email</th>
+                <th scope="col">Password</th>
+                <th scope="col">Role does</th>
               </tr>
             </thead>
             <tbody>
