@@ -10,6 +10,10 @@ echo "==> destroying every managed resource"
 terraform destroy -auto-approve -input=false
 
 echo
+echo "==> disabling deploys so the next push to main doesn't fail against gone infra"
+gh variable set DEPLOY_ENABLED --repo "$(gh repo view --json nameWithOwner -q .nameWithOwner)" --body false
+
+echo
 echo "==> confirming nothing is left billing"
 
 leftovers=0

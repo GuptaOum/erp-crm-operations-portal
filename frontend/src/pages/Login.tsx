@@ -69,23 +69,34 @@ export function Login() {
         </form>
 
         <div className="auth-hint">
-          <strong>Demo accounts, all with the password Portal@2026</strong>
+          <strong>Demo accounts</strong>
           <table className="auth-roles">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Password</th>
+                <th>Role does</th>
+              </tr>
+            </thead>
             <tbody>
               <tr>
                 <td>admin@example.com</td>
+                <td>Portal@2026</td>
                 <td>Everything, and the only role that manages staff accounts</td>
               </tr>
               <tr>
                 <td>sales@example.com</td>
+                <td>Portal@2026</td>
                 <td>Customers, follow ups, challans</td>
               </tr>
               <tr>
                 <td>warehouse@example.com</td>
+                <td>Portal@2026</td>
                 <td>Products, stock movements, confirming challans</td>
               </tr>
               <tr>
                 <td>accounts@example.com</td>
+                <td>Portal@2026</td>
                 <td>Reads everything, downloads challan PDFs</td>
               </tr>
             </tbody>
