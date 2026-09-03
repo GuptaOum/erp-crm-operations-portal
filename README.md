@@ -29,6 +29,10 @@ URL is quoted here. Both resilience claims were measured, not assumed:
 | --- | --- | --- |
 | Database failover | `reboot-db-instance --force-failover` | primary moved `ap-south-1b` to `ap-south-1a`, API recovered on its own in about 25s, no restart |
 | Instance loss | hard terminate an ASG instance | one failed request, replacement launched, both targets healthy again in about 2m30s |
+| Load | 800 concurrent users for twelve minutes | 192,001 requests, one failure, 255 req/s, median 526ms |
+
+It was raised, driven under load, and destroyed again, with the console screenshots and the full
+numbers under [The AWS build, running](#the-aws-build-running).
 
 ## Contents
 
@@ -45,6 +49,7 @@ URL is quoted here. Both resilience claims were measured, not assumed:
 - [Deployment](#deployment)
 - [Assumptions](#assumptions)
 - [Known limitations](#known-limitations)
+- [The AWS build, running](#the-aws-build-running)
 
 ## Stack
 
@@ -301,7 +306,10 @@ compose stack reads, and `backend/.env.example` documents the API on its own.
 
 | Variable | Purpose |
 | --- | --- |
-| `DATABASE_URL` | PostgreSQL connection string |
+| `DATABASE_URL` | PostgreSQL connection string. At stage 3 this points at RDS Proxy, not the database directly |
+| `DATABASE_REPLICA_URL` | Optional read replica. When set, reads go here and writes stay on the primary |
+| `REDIS_URL` | Optional. Shares the login rate limit across instances |
+| `DASHBOARD_CACHE_SECONDS` | Cache lifetime for the dashboard summary, `0` disables it |
 | `JWT_SECRET` | Signing key for access tokens |
 | `JWT_EXPIRES_IN` | Token lifetime, defaults to 8h |
 | `PORT` | API port, defaults to 4000 |
@@ -490,6 +498,21 @@ Use the session mode pooler on port 5432: the transaction pooler on 6543 cannot 
 
 Infrastructure is Terraform in [`infra/`](infra), deployed to `ap-south-1`. Full runbook,
 including TLS, stage transitions and the teardown checklist, is in [DEPLOYMENT.md](DEPLOYMENT.md).
+
+Stage 3 comes up with one command, and comes down with one:
+
+```bash
+./scripts/up.sh 3      # apply, publish the image, roll the instances, wait for healthy, seed
+./scripts/down.sh      # destroy, then verify nothing is left billing
+```
+
+`up.sh` publishes a fresh image every time because a destroy removes the ECR repository with
+everything else, so a rebuild is self healing rather than something to remember. The deploy workflow
+looks the bucket, registry, distribution and Auto Scaling group up from AWS at run time instead of
+reading stored values, because every rebuild issues a new CloudFront distribution.
+
+The defaults are the ones the load test justifies: `db.t4g.medium`, two instances scaling to eight,
+and no read replica. Add `-var db_read_replica=true` when the database is genuinely the ceiling.
 
 ## Assumptions
 
