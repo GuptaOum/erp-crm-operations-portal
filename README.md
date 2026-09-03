@@ -210,11 +210,14 @@ immediately, and a role change applies on their very next request. A cache with 
 that, and only invalidating writes made through this API would still miss a change made directly in
 the database. The guarantee is worth more than the milliseconds, so the query stays.
 
-The dashboard summary has an opt-in cache for the same reason reversed: at a few dozen staff it is
-not worth it, so `DASHBOARD_CACHE_SECONDS` defaults to `0` and the aggregates run per request. At a
-thousand staff those aggregates are the heaviest repeated read in the system, so stage 3 sets it to
-30 seconds. It is a plain time to live with no invalidation, which is the right trade for counters
-that are already a snapshot.
+The dashboard summary can be cached, and deliberately is not, at any stage. `DASHBOARD_CACHE_SECONDS`
+is `0` everywhere including stage 3. Those aggregates are the heaviest repeated read in the system,
+so caching them is the obvious optimisation, but the summary carries low stock alerts and due follow
+ups, and both are figures somebody acts on: a warehouse manager who sees a thirty second old stock
+count can decline an order that is actually fillable, or fail to reorder something that has just run
+out. A plain time to live has no invalidation, so there is no way to make the stale window shorter
+when it matters. In a business system the right trade is to pay for the query and route the load at
+the database instead, which is what the read replica is for.
 
 Redis is optional. With `REDIS_URL` unset the limiter counts per process and the dashboard cache
 cannot engage, which is how the free tier deployment runs. If Redis is configured but unreachable
@@ -225,21 +228,28 @@ the limiter fails open and logs once rather than answering 500.
 | Users | What it needs |
 | --- | --- |
 | 50 staff, 1,000 customers | What is deployed today, on the free tier |
-| 1,000 staff, 10,000 customers | Stage 3 with the dashboard cache on and a larger database class: `-var db_instance_class=db.t4g.medium` |
-| Beyond that | `-var db_read_replica=true`, then PDF rendering moved off the request path |
+| 1,000 staff, 10,000 customers | Stage 3 on a smaller class: `-var db_instance_class=db.t4g.medium -var db_read_replica=false` |
+| 4,000 concurrent users | The stage 3 defaults: `db.m6g.large` with a read replica |
+| Beyond that | PDF rendering moved off the request path |
 
 **This was measured rather than guessed**, under [Load test](#load-test) below. The ceiling is the
-database, not the application tier, and the fixes are ordered by that:
+database, not the application tier, and the fixes are ordered by effect rather than by size:
 
 1. **Trigram indexes**, added in `20260903000000_search_trigram_indexes`. Search is a third of the
    traffic and `ILIKE '%term%'` cannot use a btree index, so every search was a sequential scan
    across five columns. `pg_trgm` GIN indexes make those lookups indexed.
-2. **A read replica**, `-var db_read_replica=true`. Roughly ninety five percent of this workload is
+2. **A read replica**, now the stage 3 default. Roughly ninety five percent of this workload is
    reads. The application picks it up through `DATABASE_REPLICA_URL` and routes reads to it while
-   writes and transactions stay on the primary.
-3. **A larger class**, last, because it buys time rather than efficiency. Note `db.t4g.medium` is
-   burstable: at sustained high CPU it exhausts credits and drops to baseline, so an `m` class is
-   the honest choice for steady load.
+   writes and transactions stay on the primary. This is the cheapest way past the ceiling, and it
+   carries more weight here than it would elsewhere because the dashboard cache is deliberately off.
+3. **A larger class**, last, because it buys time rather than efficiency. The default is
+   `db.m6g.large` rather than `db.t4g.medium` for one reason: a `t` class is burstable, so under
+   sustained load it exhausts its CPU credits and silently drops to baseline. That is a failure that
+   looks like the application slowing down for no reason, which is the worst kind to debug.
+
+Adding application instances is explicitly **not** on that list. The load test settled it: instances
+sat at 23% CPU while the database was pinned at 97%, and the Auto Scaling group correctly refused to
+scale. More application servers would have achieved nothing.
 
 ## Modules
 
@@ -558,8 +568,11 @@ everything else, so a rebuild is self healing rather than something to remember.
 looks the bucket, registry, distribution and Auto Scaling group up from AWS at run time instead of
 reading stored values, because every rebuild issues a new CloudFront distribution.
 
-The defaults are the ones the load test justifies: `db.t4g.medium`, two instances scaling to eight,
-and no read replica. Add `-var db_read_replica=true` when the database is genuinely the ceiling.
+The defaults are sized for four thousand concurrent users: `db.m6g.large` with a read replica, and
+two instances scaling to eight. The database is the expensive half of that, so a short demo that
+does not need the headroom is cheaper raised with
+`-var db_instance_class=db.t4g.medium -var db_read_replica=false`, which is the configuration the
+load test in this README was run against.
 
 ## Assumptions
 

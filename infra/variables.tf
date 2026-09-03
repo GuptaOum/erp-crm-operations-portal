@@ -40,15 +40,15 @@ variable "key_name" {
 }
 
 variable "db_instance_class" {
-  description = "RDS instance class. db.t4g.medium is the measured floor for a thousand staff; db.t3.micro is enough for a demo"
+  description = "RDS instance class. db.m6g.large is sized for four thousand concurrent users and is deliberately not burstable, because a t class exhausts its CPU credits under sustained load and silently drops to baseline. db.t4g.medium is the measured floor for a thousand staff and db.t3.micro is enough for a demo"
   type        = string
-  default     = "db.t4g.medium"
+  default     = "db.m6g.large"
 }
 
 variable "db_read_replica" {
-  description = "Create a read replica at stage 3 and point the application at it for reads. Off by default because it doubles the database bill"
+  description = "Create a read replica at stage 3 and point the application at it for reads. On by default because roughly ninety five percent of this workload is reads, which makes the replica the cheapest way past the database ceiling. Set false to halve the database bill for a short demo"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "db_name" {
