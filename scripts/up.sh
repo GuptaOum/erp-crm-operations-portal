@@ -43,9 +43,20 @@ if [ "$STAGE" -ge 3 ]; then
 
   echo
   echo "==> rolling the instances onto the new image"
-  aws autoscaling start-instance-refresh --region "$REGION" \
+  echo "    the deploy workflow starts the refresh, so only start one if it did not"
+
+  REFRESH_STATUS="$(aws autoscaling describe-instance-refreshes --region "$REGION" \
     --auto-scaling-group-name "$ASG" \
-    --preferences '{"MinHealthyPercentage":0,"InstanceWarmup":90}' >/dev/null
+    --query 'InstanceRefreshes[0].Status' --output text 2>/dev/null || echo None)"
+
+  case "$REFRESH_STATUS" in
+    InProgress | Pending | Cancelling) ;;
+    *)
+      aws autoscaling start-instance-refresh --region "$REGION" \
+        --auto-scaling-group-name "$ASG" \
+        --preferences '{"MinHealthyPercentage":0,"InstanceWarmup":90}' >/dev/null
+      ;;
+  esac
 
   until [ "$(aws autoscaling describe-instance-refreshes --region "$REGION" \
     --auto-scaling-group-name "$ASG" \

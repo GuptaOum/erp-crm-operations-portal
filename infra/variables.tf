@@ -40,9 +40,9 @@ variable "key_name" {
 }
 
 variable "db_instance_class" {
-  description = "RDS instance class"
+  description = "RDS instance class. db.t4g.medium is the measured floor for a thousand staff; db.t3.micro is enough for a demo"
   type        = string
-  default     = "db.t3.micro"
+  default     = "db.t4g.medium"
 }
 
 variable "db_read_replica" {
@@ -109,3 +109,4 @@ variable "github_subjects" {
   type        = list(string)
   default     = []
 }
+

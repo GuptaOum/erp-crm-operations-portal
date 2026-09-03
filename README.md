@@ -546,8 +546,23 @@ requests with zero failures** at 199 req/s. On the real stage 3 topology, with t
 own host, 800 concurrent users for twelve minutes produced **88,137 requests and zero failures**,
 and the Auto Scaling group never scaled because the instances sat at **23% CPU** while RDS was
 pinned at **97%**. Adding instances would have achieved nothing, which is exactly what the scaling
-policy concluded by staying still, and it is why the trigram indexes and the read replica option
-above exist.
+policy concluded by staying still.
+
+That measurement is what the trigram indexes came from, and repeating it afterwards is the clearest
+number here:
+
+| 800 users, twelve minutes | Before the indexes, `db.t4g.medium` | After the indexes, `db.t3.micro` |
+| --- | --- | --- |
+| Requests | 88,137 | **192,001** |
+| Throughput | 117 req/s | **255 req/s** |
+| Median response | 3.73s | **526 ms** |
+| 95th percentile | 9.79s | **2.3s** |
+| Database CPU | 97% | 85% |
+| Application CPU | 23% | 45% |
+
+Twice the throughput and seven times the median response, on a **smaller** database class than the
+run it is compared against. Application CPU rising from 23% to 45% is the point: the application is
+doing the work now instead of waiting on a database that was scanning tables.
 
 ### Compute
 
