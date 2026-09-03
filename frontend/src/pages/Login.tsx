@@ -69,11 +69,34 @@ export function Login() {
         </form>
 
         <div className="auth-hint">
-          Demo accounts, password Portal@2026
-          <br />
-          admin@example.com, sales@example.com
-          <br />
-          warehouse@example.com, accounts@example.com
+          <strong>Demo accounts, all with the password Portal@2026</strong>
+          <table className="auth-roles">
+            <tbody>
+              <tr>
+                <td>admin@example.com</td>
+                <td>Everything, and the only role that manages staff accounts</td>
+              </tr>
+              <tr>
+                <td>sales@example.com</td>
+                <td>Customers, follow ups, challans</td>
+              </tr>
+              <tr>
+                <td>warehouse@example.com</td>
+                <td>Products, stock movements, confirming challans</td>
+              </tr>
+              <tr>
+                <td>accounts@example.com</td>
+                <td>Reads everything, downloads challan PDFs</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            These are four seeded examples, one per role, not a limit. There is no public sign up:
+            an admin creates every account from <strong>Users</strong>, sets its role and can reset
+            its password or deactivate it at any time. A deactivated account stops working on its
+            very next request, not when its token expires. Add fifty warehouse staff or five hundred
+            sales users the same way, the four roles stay the same.
+          </p>
         </div>
       </div>
     </div>
