@@ -116,3 +116,46 @@ jobs:
       - name: Build
         working-directory: frontend
         run: npx vite build
+
+  render:
+    if: github.event_name == 'push'
+    needs: [backend, tests, frontend]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      - name: Deploy whichever half of the repository changed
+        env:
+          WEB_HOOK: ${{ secrets.RENDER_WEB_DEPLOY_HOOK }}
+          API_HOOK: ${{ secrets.RENDER_API_DEPLOY_HOOK }}
+        run: |
+          changed=$(git diff --name-only HEAD^ HEAD 2>/dev/null || git ls-files)
+
+          trigger() {
+            if [ -z "$2" ]; then
+              echo "$1: no deploy hook configured, skipping"
+              return 0
+            fi
+
+            code=$(curl -sS -X POST -o /dev/null -w '%{http_code}' "$2")
+            echo "$1: Render answered $code"
+            case "$code" in
+              200 | 201) return 0 ;;
+              *) return 1 ;;
+            esac
+          }
+
+          if echo "$changed" | grep -q '^frontend/'; then
+            trigger frontend "$WEB_HOOK"
+          else
+            echo "frontend: unchanged, nothing to deploy"
+          fi
+
+          if echo "$changed" | grep -q '^backend/'; then
+            trigger backend "$API_HOOK"
+          else
+            echo "backend: unchanged, nothing to deploy"
+          fi

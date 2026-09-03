@@ -524,13 +524,18 @@ supplied in the dashboard rather than committed: `DATABASE_URL`, `JWT_SECRET`, `
 `VITE_API_URL`. They are marked `sync: false` in the blueprint, which is what keeps secrets out of
 the repository.
 
-Two details worth knowing:
+Three details worth knowing:
 
 - The build installs dev dependencies explicitly. `NODE_ENV` is `production` on the service, which
   makes npm omit them, and the TypeScript compiler, the type packages and the Prisma CLI all live
   there.
 - `npm install` is used rather than `npm ci`. The test tooling resolves two incompatible ranges for
   one transitive package, which `npm ci` refuses outright.
+- Deploys are triggered by CI rather than by Render watching the repository. The `render` job in
+  [`ci.yml`](.github/workflows/ci.yml) runs after the build and the test suite pass on `main`, then
+  calls the deploy hook for whichever half of the repository changed: `frontend/` deploys the site,
+  `backend/` deploys the API, and a root-only commit deploys neither. Gating on green tests is the
+  point, since a repository watcher would deploy a red commit just as happily.
 
 The database is Supabase. The application owns the `erp_portal` schema rather than `public`, set
 with `?schema=erp_portal` on the connection string, so nothing collides with Supabase's own objects.
