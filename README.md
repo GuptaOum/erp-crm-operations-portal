@@ -464,6 +464,20 @@ Run **Auth / Login** first; it stores the token for every other request.
 Enforced in the API, not the interface. The navigation hides what a role cannot use, but removing
 that would change nothing: every route is guarded server side and answers 403.
 
+There are four roles, and each one maps to a real person in a distribution business.
+
+| Role | Who this is | What they do all day | What they are kept away from, and why |
+| --- | --- | --- | --- |
+| **Admin** | The owner or office manager | Everything below, plus creating staff accounts, changing roles, deactivating people and resetting passwords | Nothing. They are the only role that can touch staff accounts, and they cannot demote or deactivate themselves, so the portal can never be locked out of its own administration |
+| **Sales** | The person who calls customers and books orders | Adds and edits customers, logs follow up notes, works the follow up queue, creates challans and cancels them | Cannot edit the catalogue or adjust stock. A salesperson correcting a stock figure by hand is exactly what the movement log exists to prevent |
+| **Warehouse** | The person on the floor picking and dispatching | Manages products, records every stock movement, and confirms challans so the goods can leave | Cannot see customer contact details at all, and their copy of a challan omits the GST number. They need a delivery address, not a phone book or billing data |
+| **Accounts** | The person who bills and reconciles | Reads customers, products and challans, and downloads challan PDFs for invoicing | Cannot create or edit anything. Read and print is the whole job, so write access would only add risk |
+
+The pattern behind it: **Sales owns the customer, Warehouse owns the stock, Accounts reads
+everything and writes nothing, Admin owns the people.** Two roles can confirm a challan, sales and
+warehouse, because in a real distributor either the person who sold it or the person dispatching it
+may be the one to release the goods.
+
 **What each role can read.**
 
 | Endpoint | Admin | Sales | Warehouse | Accounts |
