@@ -168,12 +168,9 @@ limiter kept its counters in process, so two instances allowed twice the attempt
 four times. Redis holds those counters instead, so the limit is the limit no matter how many
 instances are running. That is the whole job.
 
-**Nothing else is cached, and both omissions are deliberate.**
+**One thing is cached behind a flag, and one deliberately is not.**
 
-The dashboard is not cached. This is an internal portal for a few dozen staff, so those aggregates
-are read a few hundred times a day; caching them would buy milliseconds and cost invalidation bugs.
-
-The account lookup is not cached either, and that one was tried and removed. `authenticate` reloads
+The account lookup is not cached, and that one was tried and removed. `authenticate` reloads
 the account behind the token on every request, which makes it the most repeated query here and an
 obvious cache candidate. It also underwrites a guarantee: deactivating a user ends their session
 immediately, and a role change applies on their very next request. A cache with any TTL weakens
@@ -525,3 +522,63 @@ including TLS, stage transitions and the teardown checklist, is in [DEPLOYMENT.m
 | Image reaping | Replacing an image leaves the old object. Bucket versioning is on, so nothing is lost and nothing is cleaned up |
 | Deregistration | Hard terminating an instance costs a few requests, because the health check runs every 30s. A lifecycle hook would close that window |
 | SPA routing | Handled by a CloudFront Function, not custom error responses, which would rewrite genuine API 403 and 404 replies into the index page |
+
+## The AWS build, running
+
+Screenshots from `ap-south-1` while stage 3 was live. The stack is raised for a demonstration and
+destroyed afterwards, which is why no AWS URL is quoted anywhere in this README.
+
+### Terraform raises and removes the whole stack
+
+One apply builds all of it, and one destroy removes all of it. The counts match, which is the point:
+nothing is left behind to bill.
+
+![terraform apply output](docs/terraform-apply.png)
+
+`Apply complete! Resources: 76 added` along with the endpoints the application needs: the RDS
+instance, the RDS Proxy, the ElastiCache primary, the CloudFront domain and the load balancer.
+
+![terraform destroy output](docs/terraform-destroy.png)
+
+`Destroy complete! Resources: 76 destroyed`.
+
+### Compute
+
+![Auto Scaling group](docs/autoscaling-group.png)
+
+The group holds at its desired capacity of 2 with both instances healthy, limits of 2 to 8, spread
+across two availability zones.
+
+![EC2 instances](docs/ec2-instances.png)
+
+`erp-portal-app` instances in `ap-south-1a` and `ap-south-1b`. The terminated ones are earlier
+generations replaced by instance refreshes as new images were rolled out.
+
+![launch template](docs/launch-template.png)
+
+### Load balancing
+
+![application load balancer](docs/load-balancer.png)
+
+![target group](docs/target-group.png)
+
+### Network
+
+![VPC](docs/vpc.png)
+
+![subnets](docs/vpc-subnets.png)
+
+![route tables](docs/route-tables.png)
+
+![internet gateway](docs/internet-gateway.png)
+
+### Data and images
+
+![RDS instance](docs/rds-instance.png)
+
+`erp-portal-db` on `db.t4g.medium`, PostgreSQL, private, with IAM authentication and public access
+both disabled.
+
+![ECR repository](docs/ecr-repository.png)
+
+The API image the instances pull at boot.
