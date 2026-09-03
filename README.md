@@ -4,6 +4,9 @@ A mini ERP and CRM portal for a wholesale distribution business. Internal staff 
 and follow ups, maintain the product catalogue and stock, and raise sales challans that move stock
 out of the warehouse.
 
+**Try it: https://erp-portal-web.onrender.com** — sign in as `admin@example.com` with the password
+`Portal@2026`. The API sleeps when idle, so give the first request up to a minute.
+
 ## Live environment
 
 | | |
@@ -18,6 +21,31 @@ Sign in with any account from [Test accounts](#test-accounts); all use the passw
 The API runs on Render's free instance type, which sleeps after about fifteen minutes without
 traffic. The first request after a sleep wakes it and can take up to a minute; every request after
 that is normal. Load the portal once and give it a moment before judging it.
+
+### A five minute tour
+
+Sign in as `admin@example.com` and the dashboard opens on counts, low stock alerts and the follow
+ups that are due. Every other role sees a smaller version of that page, because the payload is
+assembled per role on the server rather than hidden in the browser. **Customers** is the CRM half:
+search across business name, contact, mobile, email or GST, filter by status and type, open a record
+to add a dated follow up note, and use **Follow ups** to see everyone owed a call, bucketed into
+overdue, today and upcoming. Mobile numbers are unique, so re-entering one returns a clear conflict
+instead of quietly creating a duplicate customer.
+
+**Products** is the inventory half. A product carries a SKU, price, current stock, an alert level
+and a warehouse location, and the stock figure is deliberately read only on the form. Every change
+goes through **Record movement**, which asks for a quantity, a direction and a reason, and writes a
+row to the movement log with your name against it. That log is the authoritative history, so the
+current stock is always explainable rather than a number somebody typed.
+
+**Challans** is where the two halves meet. Create one, search for a customer, add product lines,
+then save as draft or confirm. Confirming is the moment stock actually moves: one transaction
+decrements each product only if enough is on hand, so two people selling the last unit cannot both
+succeed, and the matching outward movements are written at the same time. Download the PDF and you
+get the delivery document with the prices as they were that day, because the challan stores its own
+copy rather than looking the product up again. Cancelling a confirmed challan returns the stock.
+Then sign in as `warehouse@example.com` to see the same data through another role: stock and
+challans, but no customer contact details and no GST number on the challan.
 
 ### The AWS build is also included
 
