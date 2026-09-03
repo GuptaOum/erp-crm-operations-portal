@@ -102,11 +102,9 @@ export function Login() {
             </tbody>
           </table>
           <p>
-            These are four seeded examples, one per role, not a limit. There is no public sign up:
-            an admin creates every account from <strong>Users</strong>, sets its role and can reset
-            its password or deactivate it at any time. A deactivated account stops working on its
-            very next request, not when its token expires. Add fifty warehouse staff or five hundred
-            sales users the same way, the four roles stay the same.
+            Four seeded examples, not a limit. There is no public sign up: an admin creates every
+            account from <strong>Users</strong> and can reset its password or deactivate it, which
+            takes effect on the next request. Any number of users, still four roles.
           </p>
         </div>
       </div>
