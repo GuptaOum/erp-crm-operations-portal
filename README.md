@@ -195,13 +195,8 @@ the limiter fails open and logs once rather than answering 500.
 | 1,000 staff, 10,000 customers | Stage 3 with the dashboard cache on and a larger database class: `-var db_instance_class=db.t4g.medium` |
 | Beyond that | `-var db_read_replica=true`, then PDF rendering moved off the request path |
 
-**This was measured rather than guessed.** A stage 3 build with 10,000 customers and 5,000 products
-was driven at 800 concurrent users for twelve minutes: 88,137 requests, **zero failures**, and the
-Auto Scaling group never scaled because the application instances sat at **23% CPU** while RDS was
-pinned at **97%**. Adding application instances would have achieved nothing, which is exactly what
-the scaling policy concluded by staying still.
-
-So the ceiling here is the database, not the application tier, and the fixes are ordered by that:
+**This was measured rather than guessed**, under [Load test](#load-test) below. The ceiling is the
+database, not the application tier, and the fixes are ordered by that:
 
 1. **Trigram indexes**, added in `20260903000000_search_trigram_indexes`. Search is a third of the
    traffic and `ILIKE '%term%'` cannot use a btree index, so every search was a sequential scan
@@ -541,6 +536,18 @@ instance, the RDS Proxy, the ElastiCache primary, the CloudFront domain and the 
 ![terraform destroy output](docs/terraform-destroy.png)
 
 `Destroy complete! Resources: 76 destroyed`.
+
+### Load test
+
+Driven with k6 against 10,000 customers and 5,000 products. A single instance running the API and
+PostgreSQL together on 2 vCPU collapsed at 4,000 virtual users, failing 52% of requests, because
+Node and Postgres were fighting for the same two cores; the same code on 4 vCPU served **57,171
+requests with zero failures** at 199 req/s. On the real stage 3 topology, with the database on its
+own host, 800 concurrent users for twelve minutes produced **88,137 requests and zero failures**,
+and the Auto Scaling group never scaled because the instances sat at **23% CPU** while RDS was
+pinned at **97%**. Adding instances would have achieved nothing, which is exactly what the scaling
+policy concluded by staying still, and it is why the trigram indexes and the read replica option
+above exist.
 
 ### Compute
 
