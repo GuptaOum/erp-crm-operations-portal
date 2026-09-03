@@ -111,9 +111,7 @@ data "aws_iam_policy_document" "github_assume" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values = length(var.github_subjects) > 0 ? var.github_subjects : [
-        "repo:${var.github_repository}:*",
-      ]
+      values   = distinct(concat(["repo:${var.github_repository}:*"], var.github_subjects))
     }
   }
 }
@@ -130,6 +128,18 @@ data "aws_iam_policy_document" "github_deploy" {
   statement {
     sid       = "AuthenticateToRegistry"
     actions   = ["ecr:GetAuthorizationToken"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "DiscoverStackResources"
+
+    actions = [
+      "ecr:DescribeRepositories",
+      "s3:ListAllMyBuckets",
+      "cloudfront:ListDistributions",
+    ]
+
     resources = ["*"]
   }
 

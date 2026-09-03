@@ -23,14 +23,32 @@ jobs:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
 
+      - name: Discover the stack
+        run: |
+          image=$(aws ecr describe-repositories --repository-names erp-portal-api \
+            --query 'repositories[0].repositoryUri' --output text)
+          bucket=$(aws s3api list-buckets \
+            --query "Buckets[?starts_with(Name, 'erp-portal-site')].Name | [0]" --output text)
+          asg=$(aws autoscaling describe-auto-scaling-groups \
+            --query "AutoScalingGroups[?contains(AutoScalingGroupName, 'erp-portal-app')].AutoScalingGroupName | [0]" \
+            --output text)
+          distribution=$(aws cloudfront list-distributions \
+            --query "DistributionList.Items[?contains(to_string(Origins.Items[].DomainName), '$bucket')].Id | [0]" \
+            --output text)
+
+          echo "IMAGE=$image" >> "$GITHUB_ENV"
+          echo "SITE_BUCKET=$bucket" >> "$GITHUB_ENV"
+          echo "ASG_NAME=$asg" >> "$GITHUB_ENV"
+          echo "DISTRIBUTION_ID=$distribution" >> "$GITHUB_ENV"
+
+          echo "image=$image bucket=$bucket asg=$asg distribution=$distribution"
+
       - name: Log in to Amazon ECR
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build and push the API image
         working-directory: backend
-        env:
-          IMAGE: ${{ vars.ECR_REPOSITORY_URL }}
         run: |
           docker build -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:latest" .
           docker push "$IMAGE:${{ github.sha }}"
@@ -53,21 +71,26 @@ jobs:
       - name: Publish the frontend to S3
         working-directory: frontend
         run: |
-          aws s3 sync dist "s3://${{ vars.SITE_BUCKET }}" --delete \
+          aws s3 sync dist "s3://$SITE_BUCKET" --delete \
             --cache-control "public, max-age=31536000, immutable" \
             --exclude index.html
-          aws s3 cp dist/index.html "s3://${{ vars.SITE_BUCKET }}/index.html" \
+          aws s3 cp dist/index.html "s3://$SITE_BUCKET/index.html" \
             --cache-control "no-cache"
 
       - name: Invalidate the CloudFront cache
         run: |
+          if [ -z "$DISTRIBUTION_ID" ] || [ "$DISTRIBUTION_ID" = "None" ]; then
+            echo "No CloudFront distribution found, nothing to invalidate"
+            exit 0
+          fi
+
           aws cloudfront create-invalidation \
-            --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --distribution-id "$DISTRIBUTION_ID" \
             --paths "/index.html"
 
       - name: Roll out the new image
         run: |
-          asg="${{ vars.AUTOSCALING_GROUP }}"
+          asg="$ASG_NAME"
 
           desired=$(aws autoscaling describe-auto-scaling-groups \
             --auto-scaling-group-names "$asg" \

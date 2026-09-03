@@ -23,13 +23,80 @@ terraform apply -auto-approve -input=false -var "stage=$STAGE"
 if [ "$STAGE" -ge 3 ]; then
   echo
   echo "==> stage 3 infrastructure is ready"
+
+  ASG="$(terraform output -raw autoscaling_group_name)"
+  TARGET_GROUP="$(aws elbv2 describe-target-groups --region "$REGION" \
+    --query 'TargetGroups[0].TargetGroupArn' --output text)"
+
+  echo
+  echo "==> publishing the first release"
+  echo "    a destroy deletes the ECR repository, so every stage 3 needs a fresh image"
+
+  gh variable set DEPLOY_ENABLED --repo "$(gh repo view --json nameWithOwner -q .nameWithOwner)" --body true
+  gh workflow run deploy.yml
+  sleep 15
+  RUN_ID="$(gh run list --workflow Deploy --limit 1 --json databaseId -q '.[0].databaseId')"
+  gh run watch "$RUN_ID" --exit-status || {
+    echo "the deploy workflow failed, see the run above" >&2
+    exit 1
+  }
+
+  echo
+  echo "==> rolling the instances onto the new image"
+  aws autoscaling start-instance-refresh --region "$REGION" \
+    --auto-scaling-group-name "$ASG" \
+    --preferences '{"MinHealthyPercentage":0,"InstanceWarmup":90}' >/dev/null
+
+  until [ "$(aws autoscaling describe-instance-refreshes --region "$REGION" \
+    --auto-scaling-group-name "$ASG" \
+    --query 'InstanceRefreshes[0].Status' --output text)" = "Successful" ]; do
+    sleep 20
+  done
+
+  echo "==> waiting for the load balancer to report every target healthy"
+  until [ "$(aws elbv2 describe-target-health --region "$REGION" \
+    --target-group-arn "$TARGET_GROUP" \
+    --query "length(TargetHealthDescriptions[?TargetHealth.State!='healthy'])" --output text)" = "0" ]; do
+    sleep 15
+  done
+
+  echo
+  echo "==> seeding the database"
+  SEED_INSTANCE="$(aws autoscaling describe-auto-scaling-groups --region "$REGION" \
+    --auto-scaling-group-names "$ASG" \
+    --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)"
+
+  SEED_SCRIPT="$(cat <<'SEED'
+set -e
+REGION=ap-south-1
+DB=$(aws ssm get-parameter --with-decryption --region $REGION --name /erp-portal/DATABASE_URL_DIRECT --query Parameter.Value --output text)
+IMAGE=$(aws ecr describe-repositories --region $REGION --repository-names erp-portal-api --query 'repositories[0].repositoryUri' --output text):latest
+aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin "${IMAGE%%/*}" >/dev/null
+docker pull "$IMAGE" >/dev/null
+docker run --rm -e DATABASE_URL="$DB" -e JWT_SECRET=seedonly -e NODE_ENV=production "$IMAGE" node dist/seed.js
+SEED
+)"
+
+  COMMAND_ID="$(aws ssm send-command --region "$REGION" \
+    --instance-ids "$SEED_INSTANCE" \
+    --document-name AWS-RunShellScript \
+    --parameters "$(python -c "import json,sys; print(json.dumps({'commands':[sys.stdin.read()]}))" <<<"$SEED_SCRIPT")" \
+    --timeout-seconds 600 --query Command.CommandId --output text)"
+
+  until aws ssm get-command-invocation --region "$REGION" --command-id "$COMMAND_ID" \
+    --instance-id "$SEED_INSTANCE" --query Status --output text 2>/dev/null \
+    | grep -qE 'Success|Failed|TimedOut'; do
+    sleep 10
+  done
+
+  aws ssm get-command-invocation --region "$REGION" --command-id "$COMMAND_ID" \
+    --instance-id "$SEED_INSTANCE" --query StandardOutputContent --output text | tail -3
+
+  echo
   terraform output
   echo
-  echo "The API now runs from an image in ECR and the frontend from S3 behind CloudFront."
-  echo "Publish the first release, then scale the group up:"
-  echo
-  echo "  gh workflow run deploy.yml"
-  echo "  terraform -chdir=infra apply -auto-approve -var stage=3 -var asg_min_size=2"
+  echo "==> stage 3 is serving. Sign in with admin@example.com and Portal@2026."
+  echo "    Destroy it with scripts/down.sh when the demo is over."
   exit 0
 fi
 

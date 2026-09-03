@@ -4,4 +4,4 @@ set -e
 echo "Applying database migrations"
 npx prisma migrate deploy
 
-exec node dist/server.js
+exec "$@"

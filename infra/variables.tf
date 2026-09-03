@@ -99,7 +99,7 @@ variable "create_github_oidc_provider" {
 }
 
 variable "github_subjects" {
-  description = "OIDC subject patterns allowed to assume the deploy role, GitHub emits immutable owner and repository ids"
+  description = "Extra OIDC subject patterns allowed to assume the deploy role. The plain repo:owner/name:* form is always allowed; add the immutable id form here when the account emits customised subject claims. Those ids change if the repository is deleted and recreated, which is why they are additive rather than a replacement"
   type        = list(string)
   default     = []
 }
