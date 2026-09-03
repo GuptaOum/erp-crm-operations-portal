@@ -69,8 +69,8 @@ export function Login() {
         </form>
 
         <div className="auth-hint">
-          <strong>Demo accounts</strong>
           <table className="auth-roles">
+            <caption>Demo accounts</caption>
             <thead>
               <tr>
                 <th scope="col">Email</th>
