@@ -111,7 +111,13 @@ data "aws_iam_policy_document" "github_assume" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = distinct(concat(["repo:${var.github_repository}:*"], var.github_subjects))
+      values = distinct(concat(
+        [
+          "repo:${var.github_repository}:*",
+          "repo:${split("/", var.github_repository)[0]}@*/${split("/", var.github_repository)[1]}@*:*",
+        ],
+        var.github_subjects,
+      ))
     }
   }
 }
