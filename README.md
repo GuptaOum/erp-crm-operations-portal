@@ -194,6 +194,30 @@ security group accepts port 5432 from the application security group only.
 | Shell access | SSM Session Manager, no SSH ingress anywhere in the VPC |
 | Deploys | GitHub Actions over OIDC, image to ECR and build to S3, no stored AWS keys |
 
+### One domain in front of both halves
+
+CloudFront is the only public entry point, and it serves two very different things behind a single
+domain. The frontend is a Vite build, so it is a folder of static files with nothing to run: those
+sit in the site bucket and CloudFront caches them at the edge. The API needs a process, so `/api/*`
+is proxied straight through to the load balancer with caching switched off. The instances never hold
+a copy of the frontend, and a request for a page never reaches an instance.
+
+| Path | Origin | Caching |
+| --- | --- | --- |
+| `/api/*` | ALB, then the app instances | Disabled, all viewer headers except `Host` forwarded |
+| everything else | S3 site bucket | Hashed assets immutable for a year, `index.html` `no-cache` |
+
+Two consequences worth knowing. Same origin for both halves means the browser makes no cross origin
+calls at all, so there is no CORS configuration and no preflight on the hot path; the frontend is
+built with `VITE_API_URL=/api`, a relative path, which is what makes that work. And because the site
+is static, it stays up and fast even with the Auto Scaling group empty, which is exactly what you see
+mid deployment: the login page renders, and every request behind it fails until the instances are
+healthy.
+
+Deep links are handled by a CloudFront Function that rewrites an unmatched path to `/index.html`, so
+`/customers/42` loads the app rather than a bucket 404. It runs only on the default behaviour, which
+is the point of the note in the limitations table below.
+
 ### What Redis is used for, and what it is not
 
 Running more than one instance breaks something that looks fine on a single box: the login rate
