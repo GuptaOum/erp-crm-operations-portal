@@ -194,6 +194,29 @@ security group accepts port 5432 from the application security group only.
 | Shell access | SSM Session Manager, no SSH ingress anywhere in the VPC |
 | Deploys | GitHub Actions over OIDC, image to ECR and build to S3, no stored AWS keys |
 
+### Every piece, one line each
+
+| Component | What it does |
+| --- | --- |
+| CloudFront | One public HTTPS domain; serves the SPA from cache and proxies `/api/*` to the load balancer |
+| S3 site bucket | Holds the built frontend files, private, reachable only through CloudFront |
+| Application Load Balancer | Public entry for the API, a node in each zone, health checks port 4000 and routes to healthy instances |
+| Auto Scaling group | Two to eight `t3.small` in the private subnets, each running the API container, scaling on 60% CPU |
+| ECR | Stores the API image that CI builds and the instances pull at boot |
+| RDS PostgreSQL, Multi-AZ | The data, with a synchronous standby in the second zone for failover |
+| Read replica | An asynchronous copy that serves list and search reads so the primary keeps writes |
+| RDS Proxy | Pools connections, so the instances share one set instead of each opening its own |
+| ElastiCache Redis | Holds the login rate limit counters, so the limit is shared across instances |
+| VPC and subnets | Two public subnets for the load balancer, two private for the app and the database |
+| NAT gateways | One per zone, giving private instances outbound internet without being reachable from it |
+| Internet gateway | The VPC's door to the internet, which is what makes the public subnets public |
+| Security groups | Per tier firewalls: load balancer to app on 4000, app to database on 5432, nothing else |
+| IAM roles | The OIDC deploy role for GitHub Actions, and the instance role for SSM, ECR and S3 |
+| SSM Parameter Store | The configuration instances read at boot, including the database URLs |
+| Secrets Manager | The database master password |
+| S3 product image bucket | Uploaded product photos, separate from the site bucket |
+| SSM Session Manager | Shell access to instances with no SSH and no inbound port |
+
 ### One domain in front of both halves
 
 CloudFront is the only public entry point, and it serves two very different things behind a single
@@ -297,6 +320,25 @@ scale. More application servers would have achieved nothing.
 | `Challan` | `challanNumber @unique`, `status`, `totalQuantity`, `totalAmount numeric(12,2)` | `ChallanStatus` DRAFT, CONFIRMED, CANCELLED |
 | `ChallanItem` | `productId`, `productName`, `productSku`, `unitPrice`, `quantity`, `lineTotal` | name, SKU and price are snapshots, not lookups |
 | `DocumentSequence` | `@@id([docType, year])`, `lastNumber` | issues `CH-YYYY-NNNN` |
+
+### Which tables actually get big
+
+Worth stating because the seed data misleads: four users on the login page make the whole thing look
+small. Users are the one table here that never grows much.
+
+| Table | Grows with | Realistic size |
+| --- | --- | --- |
+| Users | staff headcount | tens to a few hundred, ever |
+| Products | the catalogue | thousands |
+| Customers | the client base | 10,000 in the load test |
+| Challans | every sale, forever | fastest growing, thousands a month |
+| Stock movements | every challan line plus manual entries | the largest of all, several rows per challan |
+
+This is the inversion of a consumer application, where the user table *is* the growth. In an ERP the
+users are internal staff, a small set issued by an admin, while the volume sits in customers and in
+the transaction history. It is also why the tuning work went where it did: the trigram indexes cover
+customer and product search, and the lock ordering covers challan lines. Indexing the user table
+here would be pointless.
 
 ### Challan lines are snapshots
 
