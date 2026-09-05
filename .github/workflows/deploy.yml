@@ -36,12 +36,22 @@ jobs:
             --query "DistributionList.Items[?contains(to_string(Origins.Items[].DomainName), '$bucket')].Id | [0]" \
             --output text)
 
+          cluster=$(aws ecs list-clusters \
+            --query "clusterArns[?contains(@, 'erp-portal-cluster')] | [0]" --output text)
+          service=""
+          if [ -n "$cluster" ] && [ "$cluster" != "None" ]; then
+            service=$(aws ecs list-services --cluster "$cluster" \
+              --query "serviceArns[?contains(@, 'erp-portal-api')] | [0]" --output text)
+          fi
+
           echo "IMAGE=$image" >> "$GITHUB_ENV"
           echo "SITE_BUCKET=$bucket" >> "$GITHUB_ENV"
           echo "ASG_NAME=$asg" >> "$GITHUB_ENV"
           echo "DISTRIBUTION_ID=$distribution" >> "$GITHUB_ENV"
+          echo "ECS_CLUSTER=$cluster" >> "$GITHUB_ENV"
+          echo "ECS_SERVICE=$service" >> "$GITHUB_ENV"
 
-          echo "image=$image bucket=$bucket asg=$asg distribution=$distribution"
+          echo "image=$image bucket=$bucket asg=$asg distribution=$distribution cluster=$cluster service=$service"
 
       - name: Log in to Amazon ECR
         id: ecr
@@ -91,6 +101,23 @@ jobs:
       - name: Roll out the new image
         run: |
           asg="$ASG_NAME"
+
+          if [ -n "$ECS_SERVICE" ] && [ "$ECS_SERVICE" != "None" ]; then
+            echo "stage 4 is running, forcing a new deployment of $ECS_SERVICE"
+            aws ecs update-service \
+              --cluster "$ECS_CLUSTER" \
+              --service "$ECS_SERVICE" \
+              --force-new-deployment >/dev/null
+            aws ecs wait services-stable \
+              --cluster "$ECS_CLUSTER" \
+              --services "$ECS_SERVICE"
+            exit 0
+          fi
+
+          if [ -z "$asg" ] || [ "$asg" = "None" ]; then
+            echo "no Auto Scaling group and no ECS service, nothing to roll"
+            exit 0
+          fi
 
           desired=$(aws autoscaling describe-auto-scaling-groups \
             --auto-scaling-group-names "$asg" \

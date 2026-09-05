@@ -47,6 +47,13 @@ check "Auto Scaling groups" "$(aws autoscaling describe-auto-scaling-groups --re
 check "CloudFront" "$(aws cloudfront list-distributions \
   --query 'length(DistributionList.Items)' --output text 2>/dev/null)"
 
+check "Fargate tasks" "$(aws ecs list-clusters --region "$REGION" \
+  --query "clusterArns[?contains(@, 'erp-portal')]" --output text 2>/dev/null \
+  | while read -r cluster; do
+      [ -n "$cluster" ] || continue
+      aws ecs list-tasks --region "$REGION" --cluster "$cluster" --query 'length(taskArns)' --output text
+    done | awk '{ total += $1 } END { print total + 0 }')"
+
 check "Project instances" "$(aws ec2 describe-instances --region "$REGION" \
   --filters 'Name=tag:Project,Values=erp-portal' 'Name=instance-state-name,Values=running,pending,stopping,stopped' \
   --query 'length(Reservations[].Instances[])' --output text 2>/dev/null)"

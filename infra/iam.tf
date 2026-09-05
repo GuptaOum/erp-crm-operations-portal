@@ -144,6 +144,8 @@ data "aws_iam_policy_document" "github_deploy" {
       "ecr:DescribeRepositories",
       "s3:ListAllMyBuckets",
       "cloudfront:ListDistributions",
+      "ecs:ListClusters",
+      "ecs:ListServices",
     ]
 
     resources = ["*"]
@@ -193,6 +195,8 @@ data "aws_iam_policy_document" "github_deploy" {
       "autoscaling:StartInstanceRefresh",
       "autoscaling:DescribeAutoScalingGroups",
       "autoscaling:DescribeInstanceRefreshes",
+      "ecs:UpdateService",
+      "ecs:DescribeServices",
     ]
 
     resources = ["*"]

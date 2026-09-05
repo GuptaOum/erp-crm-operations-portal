@@ -6,6 +6,8 @@ locals {
   single_server        = var.stage < 3
   load_balanced        = var.stage >= 3
   managed_database     = var.stage >= 2
+  ec2_app              = var.stage == 3
+  fargate_app          = var.stage == 4
 }
 
 resource "aws_vpc" "main" {

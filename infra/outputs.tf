@@ -60,7 +60,22 @@ output "ecr_repository_url" {
 
 output "autoscaling_group_name" {
   description = "Auto Scaling group name, stage 3"
-  value       = local.load_balanced ? aws_autoscaling_group.app[0].name : null
+  value       = local.ec2_app ? aws_autoscaling_group.app[0].name : null
+}
+
+output "ecs_cluster_name" {
+  description = "ECS cluster name, stage 4"
+  value       = local.fargate_app ? aws_ecs_cluster.main[0].name : null
+}
+
+output "ecs_service_name" {
+  description = "ECS service name, stage 4"
+  value       = local.fargate_app ? aws_ecs_service.api[0].name : null
+}
+
+output "ecs_log_group" {
+  description = "CloudWatch log group carrying the container logs, stage 4"
+  value       = local.fargate_app ? aws_cloudwatch_log_group.api[0].name : null
 }
 
 output "db_proxy_endpoint" {
@@ -76,4 +91,14 @@ output "redis_endpoint" {
 output "github_deploy_role_arn" {
   description = "Role assumed by GitHub Actions"
   value       = var.github_repository != "" ? aws_iam_role.github_deploy[0].arn : null
+}
+
+output "private_subnet_ids" {
+  description = "Private subnet ids, used to place Fargate tasks at stage 4"
+  value       = aws_subnet.private[*].id
+}
+
+output "app_security_group_id" {
+  description = "Security group the application runs behind, on an instance at stage 3 and on a task at stage 4"
+  value       = aws_security_group.web.id
 }

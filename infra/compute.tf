@@ -31,7 +31,7 @@ resource "aws_eip" "single_server" {
 }
 
 resource "aws_launch_template" "app" {
-  count = local.load_balanced ? 1 : 0
+  count = local.ec2_app ? 1 : 0
 
   name_prefix   = "${local.name}-app-"
   image_id      = data.aws_ssm_parameter.amazon_linux.value
@@ -76,7 +76,7 @@ resource "aws_launch_template" "app" {
 }
 
 resource "aws_autoscaling_group" "app" {
-  count = local.load_balanced ? 1 : 0
+  count = local.ec2_app ? 1 : 0
 
   name                      = "${local.name}-app"
   min_size                  = var.asg_min_size
@@ -110,7 +110,7 @@ resource "aws_autoscaling_group" "app" {
 }
 
 resource "aws_autoscaling_policy" "cpu" {
-  count = local.load_balanced ? 1 : 0
+  count = local.ec2_app ? 1 : 0
 
   name                   = "${local.name}-cpu-target"
   autoscaling_group_name = aws_autoscaling_group.app[0].name

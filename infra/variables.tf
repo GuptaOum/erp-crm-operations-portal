@@ -11,13 +11,13 @@ variable "region" {
 }
 
 variable "stage" {
-  description = "1 single server, 2 adds RDS Multi-AZ, 3 adds NAT, ALB, Auto Scaling and CloudFront"
+  description = "1 single server, 2 adds RDS Multi-AZ, 3 adds NAT, ALB, Auto Scaling and CloudFront, 4 runs the same application on ECS Fargate instead of EC2"
   type        = number
   default     = 1
 
   validation {
-    condition     = contains([1, 2, 3], var.stage)
-    error_message = "stage must be 1, 2 or 3."
+    condition     = contains([1, 2, 3, 4], var.stage)
+    error_message = "stage must be 1, 2, 3 or 4."
   }
 }
 
@@ -110,3 +110,21 @@ variable "github_subjects" {
   default     = []
 }
 
+
+variable "task_cpu" {
+  description = "Fargate task CPU units at stage 4. 1024 is one vCPU, which matches a t3.small closely enough for the two builds to be compared"
+  type        = number
+  default     = 1024
+}
+
+variable "task_memory" {
+  description = "Fargate task memory in MiB at stage 4. Fargate only accepts certain pairings, and 2048 is the smallest allowed with 1024 CPU units"
+  type        = number
+  default     = 2048
+}
+
+variable "dashboard_cache_seconds" {
+  description = "How long the per role dashboard summary is cached in Redis. Zero everywhere, including stage 4, because the summary carries low stock alerts and due follow ups that are wrong the moment they are stale"
+  type        = number
+  default     = 0
+}

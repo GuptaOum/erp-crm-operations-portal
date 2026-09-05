@@ -9,9 +9,9 @@ REPO_URL="${PORTAL_REPO_URL:-https://github.com/GuptaOum/erp-crm-operations-port
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 case "$STAGE" in
-  1 | 2 | 3) ;;
+  1 | 2 | 3 | 4) ;;
   *)
-    echo "usage: scripts/up.sh [1|2|3]" >&2
+    echo "usage: scripts/up.sh [1|2|3|4]" >&2
     exit 1
     ;;
 esac
@@ -22,7 +22,72 @@ echo "==> applying stage $STAGE"
 terraform init -input=false >/dev/null
 terraform apply -auto-approve -input=false -var "stage=$STAGE"
 
-if [ "$STAGE" -ge 3 ]; then
+if [ "$STAGE" -eq 4 ]; then
+  echo
+  echo "==> stage 4 infrastructure is ready"
+
+  CLUSTER="$(terraform output -raw ecs_cluster_name)"
+  SERVICE="$(terraform output -raw ecs_service_name)"
+  TASK_DEF="$(aws ecs describe-services --region "$REGION" --cluster "$CLUSTER" \
+    --services "$SERVICE" --query 'services[0].taskDefinition' --output text)"
+  SUBNETS="$(terraform output -json private_subnet_ids | python -c 'import json,sys; print(",".join(json.load(sys.stdin)))')"
+  APP_SG="$(terraform output -raw app_security_group_id)"
+  TARGET_GROUP="$(aws elbv2 describe-target-groups --region "$REGION" \
+    --query 'TargetGroups[0].TargetGroupArn' --output text)"
+
+  echo
+  echo "==> publishing the first release"
+  echo "    a destroy deletes the ECR repository, so every stage needs a fresh image"
+
+  gh variable set DEPLOY_ENABLED --repo "$(gh repo view --json nameWithOwner -q .nameWithOwner)" --body true
+  gh workflow run deploy.yml
+  sleep 15
+  RUN_ID="$(gh run list --workflow Deploy --limit 1 --json databaseId -q '.[0].databaseId')"
+  gh run watch "$RUN_ID" --exit-status || {
+    echo "the deploy workflow failed, see the run above" >&2
+    exit 1
+  }
+
+  echo
+  echo "==> waiting for the service to settle on the new image"
+  aws ecs wait services-stable --region "$REGION" --cluster "$CLUSTER" --services "$SERVICE"
+
+  echo "==> waiting for the load balancer to report every target healthy"
+  until [ "$(aws elbv2 describe-target-health --region "$REGION" \
+    --target-group-arn "$TARGET_GROUP" \
+    --query "length(TargetHealthDescriptions[?TargetHealth.State!='healthy'])" --output text)" = "0" ]; do
+    sleep 15
+  done
+
+  echo
+  echo "==> seeding the database"
+  SEED_TASK="$(aws ecs run-task --region "$REGION" \
+    --cluster "$CLUSTER" \
+    --task-definition "$TASK_DEF" \
+    --launch-type FARGATE \
+    --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$APP_SG],assignPublicIp=DISABLED}" \
+    --overrides '{"containerOverrides":[{"name":"api","command":["node","dist/seed.js"]}]}' \
+    --query 'tasks[0].taskArn' --output text)"
+
+  aws ecs wait tasks-stopped --region "$REGION" --cluster "$CLUSTER" --tasks "$SEED_TASK"
+
+  SEED_EXIT="$(aws ecs describe-tasks --region "$REGION" --cluster "$CLUSTER" --tasks "$SEED_TASK" \
+    --query 'tasks[0].containers[0].exitCode' --output text)"
+
+  if [ "$SEED_EXIT" != "0" ]; then
+    echo "the seed task exited with $SEED_EXIT, check the log group for details" >&2
+    exit 1
+  fi
+
+  echo
+  terraform output
+  echo
+  echo "==> stage 4 is serving. Sign in with admin@example.com and Portal@2026."
+  echo "    Destroy it with scripts/down.sh when the demo is over."
+  exit 0
+fi
+
+if [ "$STAGE" -eq 3 ]; then
   echo
   echo "==> stage 3 infrastructure is ready"
 

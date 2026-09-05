@@ -12,10 +12,11 @@ resource "aws_lb" "app" {
 resource "aws_lb_target_group" "app" {
   count = local.load_balanced ? 1 : 0
 
-  name     = "${local.name}-api"
-  port     = 4000
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.main.id
+  name        = "${local.name}-api"
+  port        = 4000
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.main.id
+  target_type = local.fargate_app ? "ip" : "instance"
 
   health_check {
     path                = "/api/health"
