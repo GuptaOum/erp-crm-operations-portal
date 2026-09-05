@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export PYTHONIOENCODING=utf-8
+
 STAGE="${1:-1}"
 REGION="${AWS_REGION:-ap-south-1}"
 REPO_URL="${PORTAL_REPO_URL:-https://github.com/GuptaOum/erp-crm-operations-portal.git}"
